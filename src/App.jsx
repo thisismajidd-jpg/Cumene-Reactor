@@ -7,6 +7,7 @@ import { SECTION_IDS } from './utils/constants.js';
 import Hero from './components/hero/Hero.jsx';
 import DesignStudio from './components/studio/DesignStudio.jsx';
 import SensitivityPanel from './components/sensitivity/SensitivityPanel.jsx';
+import CaseStudies from './components/cases/CaseStudies.jsx';
 
 export default function App() {
   return (
@@ -32,6 +33,15 @@ export default function App() {
             description="Sliders re-solve the studio's plots in real time. The parametric study runs an n×n RK4 sweep in a Web Worker so the UI stays responsive."
           >
             <SensitivityPanel />
+          </SectionShell>
+
+          <SectionShell
+            id={SECTION_IDS.cases}
+            eyebrow="Case studies"
+            title="Three reactors, three lessons"
+            description="Each case loads a fully-specified design into the Studio. The Cumene case reproduces the calibrated Memo 5 baseline."
+          >
+            <CaseStudies />
           </SectionShell>
         </main>
         <Footer />
