@@ -6,6 +6,7 @@ import SectionShell from './components/layout/SectionShell.jsx';
 import { SECTION_IDS } from './utils/constants.js';
 import Hero from './components/hero/Hero.jsx';
 import DesignStudio from './components/studio/DesignStudio.jsx';
+import SensitivityPanel from './components/sensitivity/SensitivityPanel.jsx';
 
 export default function App() {
   return (
@@ -22,6 +23,15 @@ export default function App() {
             description="Configure the reaction, operating conditions, reactor type, and any constraints on the left. Outputs update as you type."
           >
             <DesignStudio />
+          </SectionShell>
+
+          <SectionShell
+            id={SECTION_IDS.sensitivity}
+            eyebrow="Sensitivity & Optimization"
+            title="Tune one variable, sweep two, or optimize many"
+            description="Sliders re-solve the studio's plots in real time. The parametric study runs an n×n RK4 sweep in a Web Worker so the UI stays responsive."
+          >
+            <SensitivityPanel />
           </SectionShell>
         </main>
         <Footer />
