@@ -8,6 +8,7 @@ import Hero from './components/hero/Hero.jsx';
 import DesignStudio from './components/studio/DesignStudio.jsx';
 import SensitivityPanel from './components/sensitivity/SensitivityPanel.jsx';
 import CaseStudies from './components/cases/CaseStudies.jsx';
+import TheoryReference from './components/theory/TheoryReference.jsx';
 
 export default function App() {
   return (
@@ -42,6 +43,15 @@ export default function App() {
             description="Each case loads a fully-specified design into the Studio. The Cumene case reproduces the calibrated Memo 5 baseline."
           >
             <CaseStudies />
+          </SectionShell>
+
+          <SectionShell
+            id={SECTION_IDS.theory}
+            eyebrow="Theory reference"
+            title="The equations behind the plots"
+            description="Compact, beautifully typeset summary of the design equations the solver implements."
+          >
+            <TheoryReference />
           </SectionShell>
         </main>
         <Footer />
