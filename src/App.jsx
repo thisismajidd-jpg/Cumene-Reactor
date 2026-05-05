@@ -9,6 +9,7 @@ import DesignStudio from './components/studio/DesignStudio.jsx';
 import SensitivityPanel from './components/sensitivity/SensitivityPanel.jsx';
 import CaseStudies from './components/cases/CaseStudies.jsx';
 import TheoryReference from './components/theory/TheoryReference.jsx';
+import AboutSection from './components/about/AboutSection.jsx';
 
 export default function App() {
   return (
@@ -52,6 +53,15 @@ export default function App() {
             description="Compact, beautifully typeset summary of the design equations the solver implements."
           >
             <TheoryReference />
+          </SectionShell>
+
+          <SectionShell
+            id={SECTION_IDS.about}
+            eyebrow="About"
+            title="Built for CHPE4512 · Group 03"
+            description="Project context, what ReactorIQ adds beyond the original Python memos, and the textbooks behind the equations."
+          >
+            <AboutSection />
           </SectionShell>
         </main>
         <Footer />

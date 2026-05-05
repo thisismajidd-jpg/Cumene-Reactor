@@ -1,11 +1,9 @@
 import React from 'react';
-import { SECTION_IDS } from '../../utils/constants.js';
 
 export default function Footer() {
   return (
     <footer
-      id={SECTION_IDS.about}
-      className="border-t border-border bg-bg-panel/60 mt-24"
+      className="border-t border-border bg-bg-panel/60 mt-12"
     >
       <div className="mx-auto max-w-7xl px-6 sm:px-8 py-12 grid gap-10 md:grid-cols-3">
         <div>
