@@ -17,6 +17,16 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     target: 'es2020',
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          recharts: ['recharts'],
+          katex: ['katex'],
+        },
+      },
+    },
   },
   worker: {
     format: 'es',

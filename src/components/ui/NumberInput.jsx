@@ -43,6 +43,10 @@ export default function NumberInput({
       setError('Not a number');
       return;
     }
+    if (parsed == null && text === '' && inputProps.nullable !== false) {
+      onValue?.(null);
+      return;
+    }
     if (parsed != null) {
       setText(formatInitial(parsed, precision));
       onValue?.(parsed);

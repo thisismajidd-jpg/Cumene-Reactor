@@ -12,11 +12,20 @@ const NAV = [
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Close the mobile menu on hash change.
+  useEffect(() => {
+    const onHash = () => setMenuOpen(false);
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   return (
@@ -39,7 +48,7 @@ export default function Navbar() {
             ReactorIQ
           </span>
         </a>
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-1" aria-label="Primary">
           {NAV.map((item) => (
             <a
               key={item.id}
@@ -52,8 +61,47 @@ export default function Navbar() {
         </nav>
         <div className="flex items-center gap-2">
           <UnitToggle />
+          <button
+            type="button"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-text-muted hover:text-text-primary focus-ring"
+          >
+            {menuOpen ? (
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+                <path d="M3 4h10M3 8h10M3 12h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
+      {menuOpen && (
+        <nav
+          id="mobile-menu"
+          aria-label="Primary mobile"
+          className="md:hidden border-t border-border bg-bg-base/95 backdrop-blur-md"
+        >
+          <ul className="flex flex-col px-3 py-2">
+            {NAV.map((item) => (
+              <li key={item.id}>
+                <a
+                  href={`#${item.id}`}
+                  className="block px-3 py-2 rounded text-sm text-text-primary hover:bg-bg-surface focus-ring"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
     </header>
   );
 }
