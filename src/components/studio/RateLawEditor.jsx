@@ -68,6 +68,7 @@ export default function RateLawEditor({ rxn, species, update }) {
               value={orderFor(sp.id)}
               onValue={(v) => setOrder(sp.id, v)}
               precision={3}
+              unit="—"
               min={0}
             />
           ))}

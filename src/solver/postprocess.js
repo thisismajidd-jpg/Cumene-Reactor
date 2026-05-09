@@ -76,18 +76,24 @@ export function processTrajectory({
   }
 
   // ── Identify the desired (main) product ──────────────────────────────
+  // Selectivity = produced / consumed is undefined at the entry where almost
+  // nothing has reacted yet — using `0` there draws a misleading 0 → asymptote
+  // jump in the chart. Return `null` instead so charts skip the warm-up zone.
   const mainProduct = identifyMainProduct(species, reactions, F);
   const Sarr = new Array(n);
   const Yarr = new Array(n);
+  // Threshold relative to inlet flow: 0.1 % of the limiting reactant must have
+  // been consumed before S is meaningful.
+  const sThreshold = Math.max(F0_lim * 1e-3, 1e-12);
   if (mainProduct && limitingSp) {
     for (let i = 0; i < n; i++) {
       const consumed = F0_lim - F[limitingSp][i];
       const produced = (F[mainProduct][i] || 0) - (feed.F0[mainProduct] || 0);
-      Sarr[i] = consumed > 1e-12 ? produced / consumed : 0;
+      Sarr[i] = consumed > sThreshold ? produced / consumed : null;
       Yarr[i] = F0_lim > 0 ? produced / F0_lim : 0;
     }
   } else {
-    Sarr.fill(0);
+    Sarr.fill(null);
     Yarr.fill(0);
   }
 
@@ -122,29 +128,91 @@ export function processTrajectory({
 
   // ── Constraint-violation flags ───────────────────────────────────────
   const warnings = [];
+  const X_final = Xarr[Xarr.length - 1];
+  const Y_final = Yarr[Yarr.length - 1];
+  const S_final = Sarr[Sarr.length - 1];
+  const T_final = Tarr[Tarr.length - 1];
+  const T_min_seen = Tarr.reduce((m, t) => (t < m ? t : m), Tarr[0]);
+  const dT_max = Thot - feed.T0;
+  const P_final = Parr[Parr.length - 1];
+  const dP_max = feed.P0 - Parr.reduce((m, p) => (p < m ? p : m), Parr[0]);
+
   if (constraints?.Tmax != null && Thot > constraints.Tmax) {
     warnings.push({
       level: 'danger',
       code: 'TMAX_EXCEEDED',
-      message: `Hotspot ${Thot.toFixed(1)} K exceeds the constraint of ${constraints.Tmax} K.`,
+      message: `Hotspot ${Thot.toFixed(1)} K exceeds Tmax of ${constraints.Tmax} K.`,
+    });
+  }
+  if (constraints?.Tmin != null && T_min_seen < constraints.Tmin) {
+    warnings.push({
+      level: 'warning',
+      code: 'TMIN_VIOLATED',
+      message: `Min reactor T ${T_min_seen.toFixed(1)} K below Tmin of ${constraints.Tmin} K.`,
+    });
+  }
+  if (constraints?.dTmax != null && dT_max > constraints.dTmax) {
+    warnings.push({
+      level: 'danger',
+      code: 'DTMAX_EXCEEDED',
+      message: `ΔT (${dT_max.toFixed(1)} K) exceeds rise limit of ${constraints.dTmax} K.`,
     });
   }
   if (constraints?.Wmax != null && (W_for_target ?? Infinity) > constraints.Wmax) {
     warnings.push({
       level: 'danger',
       code: 'WMAX_EXCEEDED',
-      message: `Required ${basis} (${(W_for_target ?? 0).toFixed(0)}) exceeds the constraint.`,
+      message: `Required ${basis} (${(W_for_target ?? 0).toFixed(2)}) exceeds the limit.`,
     });
   }
-  if (constraints?.Smin != null) {
-    const S_final = Sarr[Sarr.length - 1];
-    if (S_final < constraints.Smin) {
-      warnings.push({
-        level: 'warning',
-        code: 'SELECTIVITY_LOW',
-        message: `Final selectivity ${(100 * S_final).toFixed(1)}% < min ${(100 * constraints.Smin).toFixed(1)}%.`,
-      });
-    }
+  if (constraints?.Vmax != null && basis === 'V' && ts[ts.length - 1] > constraints.Vmax) {
+    warnings.push({
+      level: 'danger',
+      code: 'VMAX_EXCEEDED',
+      message: `Reactor volume ${ts[ts.length - 1].toFixed(3)} m³ > Vmax ${constraints.Vmax} m³.`,
+    });
+  }
+  if (constraints?.Pmin != null && P_final < constraints.Pmin) {
+    warnings.push({
+      level: 'warning',
+      code: 'PMIN_VIOLATED',
+      message: `Outlet P ${(P_final / 1e5).toFixed(2)} bar < Pmin ${(constraints.Pmin / 1e5).toFixed(2)} bar.`,
+    });
+  }
+  if (constraints?.dPmax != null && dP_max > constraints.dPmax) {
+    warnings.push({
+      level: 'warning',
+      code: 'DPMAX_EXCEEDED',
+      message: `ΔP ${(dP_max / 1e5).toFixed(2)} bar exceeds limit ${(constraints.dPmax / 1e5).toFixed(2)} bar.`,
+    });
+  }
+  if (constraints?.Xmin != null && X_final < constraints.Xmin) {
+    warnings.push({
+      level: 'warning',
+      code: 'XMIN_NOT_MET',
+      message: `Final X ${(100 * X_final).toFixed(1)}% < Xmin ${(100 * constraints.Xmin).toFixed(1)}%.`,
+    });
+  }
+  if (constraints?.Xmax != null && X_final > constraints.Xmax) {
+    warnings.push({
+      level: 'warning',
+      code: 'XMAX_EXCEEDED',
+      message: `Final X ${(100 * X_final).toFixed(1)}% > Xmax ${(100 * constraints.Xmax).toFixed(1)}%.`,
+    });
+  }
+  if (constraints?.Ymin != null && Y_final < constraints.Ymin) {
+    warnings.push({
+      level: 'warning',
+      code: 'YIELD_LOW',
+      message: `Final yield ${(100 * Y_final).toFixed(1)}% < Ymin ${(100 * constraints.Ymin).toFixed(1)}%.`,
+    });
+  }
+  if (constraints?.Smin != null && S_final < constraints.Smin) {
+    warnings.push({
+      level: 'warning',
+      code: 'SELECTIVITY_LOW',
+      message: `Final selectivity ${(100 * S_final).toFixed(1)}% < min ${(100 * constraints.Smin).toFixed(1)}%.`,
+    });
   }
 
   return {

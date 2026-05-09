@@ -4,7 +4,7 @@
 // pushes the result into state under `solver.result`.  Re-runs are debounced
 // so slider drags don't fire 60 times a second.
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { solveReactor } from '../solver/index.js';
 import { useReactor } from './useReactor.js';
 import { useDebouncedValue } from './useDebouncedValue.js';
@@ -26,8 +26,18 @@ export function buildSolverConfig(state) {
   }
 
   // Feed: F0 only contains keys that exist in the species list.
+  // For a multi-tube PBR, state.conditions.feedFlow stores the TOTAL reactor
+  // flow rate (mol/s, what the user sees in the UI). The solver simulates a
+  // single representative tube, so we divide by the tube count here. PFR/CSTR
+  // and single-tube PBRs are unaffected (divisor = 1).
+  const tubeDivisor =
+    state.reactor.type === 'PBR' && state.reactor.pbr.tubes > 1
+      ? state.reactor.pbr.tubes
+      : 1;
   const F0 = {};
-  for (const id of speciesIds) F0[id] = state.conditions.feedFlow[id] ?? 0;
+  for (const id of speciesIds) {
+    F0[id] = (state.conditions.feedFlow[id] ?? 0) / tubeDivisor;
+  }
 
   const feed = {
     F0,
@@ -90,10 +100,17 @@ export function buildSolverConfig(state) {
     thermal,
     constraints: {
       Xtarget: state.conditions.XTarget,
-      Tmax: state.constraints.Tmax,
-      Wmax: state.constraints.Wmax,
-      Vmax: state.constraints.Vmax,
-      Smin: state.constraints.Smin,
+      Tmax:  state.constraints.Tmax,
+      Tmin:  state.constraints.Tmin,
+      dTmax: state.constraints.dTmax,
+      Wmax:  state.constraints.Wmax,
+      Vmax:  state.constraints.Vmax,
+      Pmin:  state.constraints.Pmin,
+      dPmax: state.constraints.dPmax,
+      Xmin:  state.constraints.Xmin,
+      Xmax:  state.constraints.Xmax,
+      Ymin:  state.constraints.Ymin,
+      Smin:  state.constraints.Smin,
     },
   };
 }
@@ -131,11 +148,31 @@ function avgMW(state) {
 
 /**
  * Subscribes to state changes, runs the solver (debounced), pushes the result
- * back into state. Returns `{ runNow }` so callers can force a synchronous run.
+ * back into state. The studio relies entirely on this auto-loop — no manual
+ * "solve" CTA is required.
+ *
+ * IMPORTANT: we deliberately debounce ONLY the input slices (reaction,
+ * conditions, reactor, constraints). Including `state.solver` would cause an
+ * infinite loop — every solve dispatches `solverStatus`/`solverResult`, which
+ * would change `state`, retrigger the debounce, and re-solve indefinitely.
  */
 export function useAutoSolve({ debounceMs = DEFAULT_DEBOUNCE_MS, enabled = true } = {}) {
   const { state, set } = useReactor();
-  const debounced = useDebouncedValue(state, debounceMs);
+
+  // Stable reference unless one of the input slices actually changed. Reducer
+  // dispatches preserve references on untouched slices so this only "ticks"
+  // when an input the solver cares about really changed.
+  const inputs = useMemo(
+    () => ({
+      reaction: state.reaction,
+      conditions: state.conditions,
+      reactor: state.reactor,
+      constraints: state.constraints,
+    }),
+    [state.reaction, state.conditions, state.reactor, state.constraints],
+  );
+
+  const debouncedInputs = useDebouncedValue(inputs, debounceMs);
   const runIdRef = useRef(0);
 
   useEffect(() => {
@@ -144,21 +181,12 @@ export function useAutoSolve({ debounceMs = DEFAULT_DEBOUNCE_MS, enabled = true 
     set.solverStatus('running');
     // Run on next tick so the spinner has a chance to render.
     const t = setTimeout(() => {
-      const config = buildSolverConfig(debounced);
+      const config = buildSolverConfig(debouncedInputs);
       const result = solveReactor(config);
       // Drop late results.
       if (myId !== runIdRef.current) return;
       set.solverResult(result);
     }, 0);
     return () => clearTimeout(t);
-  }, [debounced, enabled, set]);
-
-  const runNow = useCallback(() => {
-    const config = buildSolverConfig(state);
-    const result = solveReactor(config);
-    set.solverResult(result);
-    return result;
-  }, [state, set]);
-
-  return { runNow };
+  }, [debouncedInputs, enabled, set]);
 }

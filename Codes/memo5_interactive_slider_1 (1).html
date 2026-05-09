@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Memo 5 — Non-Isothermal Cumene Reactor (Interactive)</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #334155;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --good: #10b981;
+    --bad: #ef4444;
+    --grid: #475569;
+    --line-ni: #ef4444;
+    --line-iso: #3b82f6;
+    --line-cool: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg); color: var(--text);
+    margin: 0; padding: 16px; line-height: 1.4;
+  }
+  .container { max-width: 1280px; margin: 0 auto; }
+  .header {
+    margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--panel-2);
+  }
+  .header h1 { margin: 0 0 4px 0; font-size: 22px; font-weight: 600; color: var(--accent); }
+  .header p  { margin: 0; color: var(--text-dim); font-size: 13px; }
+  .grid {
+    display: grid; grid-template-columns: 320px 1fr; gap: 16px;
+  }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--panel); border-radius: 10px; padding: 16px;
+    border: 1px solid var(--panel-2);
+  }
+  .panel h3 { margin: 0 0 10px 0; font-size: 14px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+  .slider-row { margin-bottom: 16px; }
+  .slider-row label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; margin-bottom: 4px;
+  }
+  .slider-row .name { color: var(--text); font-weight: 600; }
+  .slider-row .val  { color: var(--accent); font-family: ui-monospace, monospace; font-weight: 600; }
+  input[type="range"] {
+    width: 100%; -webkit-appearance: none; height: 6px; background: var(--panel-2);
+    border-radius: 3px; outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; background: var(--accent);
+    border-radius: 50%; cursor: pointer; border: 2px solid var(--bg);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px; background: var(--accent); border-radius: 50%;
+    cursor: pointer; border: 2px solid var(--bg);
+  }
+  .range-hint {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--text-dim); margin-top: 2px;
+  }
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 8px;
+  }
+  .kpi {
+    background: var(--panel-2); padding: 10px; border-radius: 6px;
+  }
+  .kpi .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi .value { font-size: 18px; font-weight: 700; font-family: ui-monospace, monospace; color: var(--text); }
+  .kpi .unit  { font-size: 11px; color: var(--text-dim); margin-left: 4px; }
+  .stability {
+    margin-top: 12px; padding: 10px; border-radius: 6px;
+    text-align: center; font-weight: 600; font-size: 14px;
+  }
+  .stability.good { background: rgba(16, 185, 129, 0.15); color: var(--good); border: 1px solid var(--good); }
+  .stability.bad  { background: rgba(239, 68, 68, 0.15); color: var(--bad); border: 1px solid var(--bad); }
+  svg.plot { width: 100%; height: 380px; background: var(--panel-2); border-radius: 6px; }
+  .axis-label { fill: var(--text-dim); font-size: 11px; }
+  .tick { fill: var(--text-dim); font-size: 10px; font-family: ui-monospace, monospace; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+  .swatch { width: 16px; height: 3px; border-radius: 2px; }
+  .footnote { margin-top: 12px; font-size: 11px; color: var(--text-dim); font-style: italic; }
+  .reset-btn {
+    width: 100%; padding: 8px; margin-top: 12px; background: var(--panel-2);
+    color: var(--text); border: 1px solid var(--accent); border-radius: 6px;
+    cursor: pointer; font-size: 13px; font-weight: 600;
+  }
+  .reset-btn:hover { background: var(--accent); color: var(--bg); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Memo 5 — Non-Isothermal Cumene PBR · Interactive Tool</h1>
+    <p>Group 03 · CHPE4512 Spring 26 · 4000-tube fixed-bed · HITEC molten-salt cooling</p>
+  </div>
+
+  <div class="grid">
+    <!-- ============== CONTROL PANEL ============== -->
+    <div class="panel">
+      <h3>Operating Conditions</h3>
+
+      <div class="slider-row">
+        <label><span class="name">Inlet temperature  T<sub>in</sub></span>
+               <span class="val"><span id="vTin">628</span> K</span></label>
+        <input type="range" id="sTin" min="580" max="680" step="1" value="628">
+        <div class="range-hint"><span>580 K</span><span>680 K</span></div>
+      </div>
+
+      <div class="slider-row">
+        <label><span class="name">Coolant temperature  T<sub>a</sub></span>
+               <span class="val"><span id="vTa">600</span> K</span></label>
+        <input type="range" id="sTa" min="500" max="650" step="1" value="600">
+        <div class="range-hint"><span>500 K</span><span>650 K</span></div>
+      </div>
+
+      <div class="slider-row">
+        <label><span class="name">Heat-transfer coeff.  U</span>
+               <span class="val"><span id="vU">50</span> W/m²·K</span></label>
+        <input type="range" id="sU" min="0" max="300" step="5" value="50">
+        <div class="range-hint"><span>0</span><span>300</span></div>
+      </div>
+
+      <button class="reset-btn" id="btnReset">↺  Reset to Baseline</button>
+
+      <h3 style="margin-top: 18px;">Reactor Geometry  (locked)</h3>
+      <div style="font-size: 12px; color: var(--text-dim); line-height: 1.7;">
+        Tubes: <span style="color:var(--text)">4 000</span> &nbsp;·&nbsp;
+        D<sub>t</sub>: <span style="color:var(--text)">0.0254 m</span> &nbsp;·&nbsp;
+        W/tube: <span style="color:var(--text)">11.15 kg</span><br>
+        ρ<sub>b</sub>: <span style="color:var(--text)">1150 kg/m³</span> &nbsp;·&nbsp;
+        P: <span style="color:var(--text)">35 bar</span><br>
+        F<sub>A0</sub> = 27.75 mol/s · F<sub>B0</sub> = 30.75 mol/s
+      </div>
+
+      <div class="footnote">
+        Reactions:<br>
+        (1) C<sub>3</sub>H<sub>6</sub> + C<sub>6</sub>H<sub>6</sub> → C<sub>9</sub>H<sub>12</sub>  (Ea₁ = 104.2 kJ/mol)<br>
+        (2) C<sub>9</sub>H<sub>12</sub> + C<sub>3</sub>H<sub>6</sub> → C<sub>12</sub>H<sub>18</sub> (Ea₂ = 120.2 kJ/mol)
+      </div>
+    </div>
+
+    <!-- ============== RESULTS PANEL ============== -->
+    <div class="panel">
+      <h3>Live Results</h3>
+
+      <svg class="plot" id="plot" viewBox="0 0 700 380" preserveAspectRatio="none"></svg>
+
+      <div class="legend">
+        <div class="legend-item"><div class="swatch" style="background:var(--line-ni)"></div>Non-isothermal T(W)</div>
+        <div class="legend-item"><div class="swatch" style="background:var(--line-iso); height:2px; border-top:1px dashed var(--line-iso)"></div>Isothermal at T<sub>in</sub></div>
+        <div class="legend-item"><div class="swatch" style="background:var(--line-cool)"></div>T<sub>coolant</sub></div>
+        <div class="legend-item">●&nbsp;<span style="color:var(--accent)">Hotspot</span></div>
+      </div>
+
+      <h3 style="margin-top: 18px;">Selectivity & Conversion Profile</h3>
+      <svg class="plot" id="plot2" viewBox="0 0 700 380" preserveAspectRatio="none" style="height:300px;"></svg>
+
+      <div class="legend">
+        <div class="legend-item"><div class="swatch" style="background:#10b981"></div>S<sub>cumene</sub> (cumulative)</div>
+        <div class="legend-item"><div class="swatch" style="background:#ef4444"></div>S<sub>DIPB</sub> (cumulative)</div>
+        <div class="legend-item"><div class="swatch" style="background:#3b82f6"></div>X<sub>A</sub> (conversion)</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi"><div class="label">T<sub>hotspot</sub></div>
+                         <div class="value"><span id="kpiTh">—</span><span class="unit">K</span></div></div>
+        <div class="kpi"><div class="label">Conversion  X<sub>A</sub></div>
+                         <div class="value"><span id="kpiX">—</span><span class="unit">—</span></div></div>
+        <div class="kpi"><div class="label">Selectivity to cumene</div>
+                         <div class="value"><span id="kpiS">—</span><span class="unit">—</span></div></div>
+        <div class="kpi"><div class="label">Reactor gain</div>
+                         <div class="value"><span id="kpiG">—</span><span class="unit">K/K</span></div></div>
+      </div>
+
+      <div class="stability good" id="stabBox">— STABLE —</div>
+
+      <div class="footnote">
+        Gain = ΔT<sub>hotspot</sub> / ΔT<sub>coolant</sub>  (computed over a 1 K perturbation in T<sub>a</sub>).  
+        Stability criterion:  Gain &lt; 2.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =============================================================================
+//   CHPE4512  Memo 5  —  Live ODE solver for non-isothermal PBR
+//   Same equations & calibration as memo5_nonisothermal.py
+// =============================================================================
+const R     = 8.314;
+const P0    = 35.0e5;
+const N_t   = 4000;
+const D_t   = 0.0254;
+const RHO_C = 1150.0;             // catalyst solid density
+const PHI   = 0.5;                // void fraction
+const RHO_B = RHO_C * (1 - PHI);  // 575 kg/m³ — bulk density (CORRECTED)
+const W_TOT = 44610.0;
+const W_PT  = W_TOT / N_t;          // 11.1525 kg/tube
+
+const F_A0 = 27.75 / N_t;
+const F_B0 = 30.75 / N_t;
+const F_I0 = 1.46  / N_t;
+
+const DH1 = -99.4e3;
+const DH2 = -95.3e3;
+const EA1 = 104.2e3;
+const EA2 = 120.2e3;
+
+// CALIBRATED pre-exponentials (from Python brentq)
+const A1_CAL = 22.7030;
+const A2_CAL = 14.11;
+
+const a_t = 4.0 / D_t;
+
+const CP = {
+  A: [ 3.71,   234.6,  -115.7,  22.0],
+  B: [-33.92,  474.0,  -301.8,  71.3],
+  C: [-39.40,  636.0,  -392.0,  92.7],
+  D: [-47.00,  830.0,  -500.0, 118.0],
+  I: [-4.224,  306.3,  -158.6,  32.1]
+};
+function Cp(sp, T) {
+  const c = CP[sp];
+  return c[0] + c[1]*T*1e-3 + c[2]*T*T*1e-6 + c[3]*T*T*T*1e-9;
+}
+const k1 = T => A1_CAL * Math.exp(-EA1/(R*T));
+const k2 = T => A2_CAL * Math.exp(-EA2/(R*T));
+
+// state y = [F_A, F_B, F_C, F_D, F_I, T]
+function rhs(W, y, T_a, U) {
+  const [F_A, F_B, F_C, F_D, F_I, T] = y;
+  const F_T = F_A + F_B + F_C + F_D + F_I;
+  if (F_T <= 0 || T <= 0) return [0,0,0,0,0,0];
+  const Ctot = P0 / (R * T);
+  const C_A = Ctot * F_A / F_T;
+  const C_B = Ctot * F_B / F_T;
+  const C_C = Ctot * F_C / F_T;
+  const r1 = Math.max(k1(T) * C_A * C_B, 0);
+  const r2 = Math.max(k2(T) * C_A * C_C, 0);
+  const Q_remove = (U * a_t / RHO_B) * (T_a - T);
+  const Q_gen    = r1*(-DH1) + r2*(-DH2);
+  const SumFCp   = F_A*Cp('A',T) + F_B*Cp('B',T) + F_C*Cp('C',T)
+                 + F_D*Cp('D',T) + F_I*Cp('I',T);
+  return [
+    -(r1 + r2),
+    -r1,
+     r1 - r2,
+     r2,
+     0,
+    (Q_remove + Q_gen) / SumFCp
+  ];
+}
+
+// Fixed-step RK4 integrator
+function integrate(T_in, T_a, U, N) {
+  const h = W_PT / N;
+  let y = [F_A0, F_B0, 0, 0, F_I0, T_in];
+  const W = [0], traj = [y.slice()];
+  for (let i = 0; i < N; i++) {
+    const w = i*h;
+    const k1v = rhs(w,         y, T_a, U);
+    const k2v = rhs(w + h/2, y.map((v,j) => v + h*k1v[j]/2), T_a, U);
+    const k3v = rhs(w + h/2, y.map((v,j) => v + h*k2v[j]/2), T_a, U);
+    const k4v = rhs(w + h,   y.map((v,j) => v + h*k3v[j]),   T_a, U);
+    y = y.map((v,j) => v + h*(k1v[j] + 2*k2v[j] + 2*k3v[j] + k4v[j])/6);
+    W.push((i+1)*h);
+    traj.push(y.slice());
+  }
+  return { W, traj };
+}
+
+function summarize(sim) {
+  const W = sim.W;
+  const T = sim.traj.map(y => y[5]);
+  const F_A_e = sim.traj[sim.traj.length-1][0];
+  const F_C_e = sim.traj[sim.traj.length-1][2];
+  let iH = 0, T_h = T[0];
+  for (let i = 1; i < T.length; i++) if (T[i] > T_h) { T_h = T[i]; iH = i; }
+  const X = 1 - F_A_e / F_A0;
+  const moles_react = F_A0 - F_A_e;
+  const S_C = moles_react > 0 ? F_C_e / moles_react : 0;
+
+  // Build full profiles for plot 2
+  const SC_arr = [];
+  const SD_arr = [];
+  const X_arr  = [];
+  for (let i = 0; i < sim.traj.length; i++) {
+    const y = sim.traj[i];
+    const mr = F_A0 - y[0];
+    X_arr.push(Math.max(0, Math.min(1, 1 - y[0]/F_A0)));
+    if (mr > 1e-9) {
+      SC_arr.push(Math.max(0, Math.min(1, y[2]/mr)));
+      SD_arr.push(Math.max(0, Math.min(1, y[3]/mr)));
+    } else {
+      SC_arr.push(null);
+      SD_arr.push(null);
+    }
+  }
+  return { W, T, T_h, W_h: W[iH], X, S_C, SC: SC_arr, SD: SD_arr, X_full: X_arr };
+}
+
+// =============================================================================
+//   PLOT — manual SVG rendering
+// =============================================================================
+const plotEl = document.getElementById('plot');
+const PAD = { l: 60, r: 18, t: 18, b: 40 };
+const PW = 700, PH = 380;
+const px = w => PAD.l + (w / W_PT) * (PW - PAD.l - PAD.r);
+let T_lo = 580, T_hi = 700;
+const py = T => PAD.t + (1 - (T - T_lo)/(T_hi - T_lo)) * (PH - PAD.t - PAD.b);
+
+function renderPlot(sim, T_in, T_a) {
+  // dynamic y-range with padding
+  const Tmin = Math.min(...sim.T, T_a, T_in) - 5;
+  const Tmax = Math.max(...sim.T, T_in) + 5;
+  T_lo = Math.floor(Tmin/10)*10;
+  T_hi = Math.ceil(Tmax/10)*10;
+
+  const parts = [];
+
+  // Grid + ticks
+  for (let t = T_lo; t <= T_hi; t += 20) {
+    const y = py(t);
+    parts.push(`<line x1="${PAD.l}" y1="${y}" x2="${PW-PAD.r}" y2="${y}" stroke="var(--grid)" stroke-width="0.5" stroke-dasharray="2,3"/>`);
+    parts.push(`<text class="tick" x="${PAD.l-6}" y="${y+3}" text-anchor="end">${t}</text>`);
+  }
+  for (let w = 0; w <= W_PT; w += 2) {
+    const x = px(w);
+    parts.push(`<line x1="${x}" y1="${PAD.t}" x2="${x}" y2="${PH-PAD.b}" stroke="var(--grid)" stroke-width="0.3" stroke-dasharray="1,3"/>`);
+    parts.push(`<text class="tick" x="${x}" y="${PH-PAD.b+14}" text-anchor="middle">${w}</text>`);
+  }
+
+  // Coolant line
+  if (T_a >= T_lo && T_a <= T_hi) {
+    parts.push(`<line x1="${PAD.l}" y1="${py(T_a)}" x2="${PW-PAD.r}" y2="${py(T_a)}" stroke="var(--line-cool)" stroke-width="1" stroke-dasharray="3,3"/>`);
+    parts.push(`<text class="tick" x="${PW-PAD.r-4}" y="${py(T_a)-4}" text-anchor="end" fill="var(--line-cool)">T_coolant = ${T_a} K</text>`);
+  }
+
+  // Isothermal line
+  if (T_in >= T_lo && T_in <= T_hi) {
+    parts.push(`<line x1="${PAD.l}" y1="${py(T_in)}" x2="${PW-PAD.r}" y2="${py(T_in)}" stroke="var(--line-iso)" stroke-width="1.2" stroke-dasharray="6,4"/>`);
+  }
+
+  // Non-isothermal curve
+  let d = '';
+  for (let i = 0; i < sim.W.length; i++) {
+    d += (i === 0 ? 'M' : 'L') + px(sim.W[i]) + ',' + py(sim.T[i]) + ' ';
+  }
+  parts.push(`<path d="${d}" fill="none" stroke="var(--line-ni)" stroke-width="2.5"/>`);
+
+  // Hotspot marker
+  parts.push(`<circle cx="${px(sim.W_h)}" cy="${py(sim.T_h)}" r="6" fill="var(--accent)" stroke="white" stroke-width="1.5"/>`);
+  const labelX = sim.W_h < W_PT/2 ? px(sim.W_h)+10 : px(sim.W_h)-10;
+  const anchor = sim.W_h < W_PT/2 ? 'start' : 'end';
+  parts.push(`<text x="${labelX}" y="${py(sim.T_h)-9}" font-size="11" fill="var(--accent)" font-weight="700" text-anchor="${anchor}">${sim.T_h.toFixed(1)} K</text>`);
+
+  // Axis labels
+  parts.push(`<text class="axis-label" x="${PW/2}" y="${PH-8}" text-anchor="middle">Catalyst weight per tube  W  [kg]</text>`);
+  parts.push(`<text class="axis-label" x="14" y="${PH/2}" text-anchor="middle" transform="rotate(-90 14 ${PH/2})">Temperature  T  [K]</text>`);
+
+  plotEl.innerHTML = parts.join('');
+}
+
+// =============================================================================
+//   Selectivity / Conversion Plot (0–1 scale)
+// =============================================================================
+const plot2El = document.getElementById('plot2');
+function py2(v) { return PAD.t + (1 - v) * (PH - PAD.t - PAD.b); }
+
+function renderPlot2(simSel) {
+  const parts = [];
+
+  // Grid + ticks (0 to 1)
+  for (let v = 0; v <= 1; v += 0.1) {
+    const y = py2(v);
+    parts.push(`<line x1="${PAD.l}" y1="${y}" x2="${PW-PAD.r}" y2="${y}" stroke="var(--grid)" stroke-width="0.5" stroke-dasharray="2,3"/>`);
+    parts.push(`<text class="tick" x="${PAD.l-6}" y="${y+3}" text-anchor="end">${v.toFixed(1)}</text>`);
+  }
+  for (let w = 0; w <= W_PT; w += 2) {
+    const x = px(w);
+    parts.push(`<line x1="${x}" y1="${PAD.t}" x2="${x}" y2="${PH-PAD.b}" stroke="var(--grid)" stroke-width="0.3" stroke-dasharray="1,3"/>`);
+    parts.push(`<text class="tick" x="${x}" y="${PH-PAD.b+14}" text-anchor="middle">${w}</text>`);
+  }
+
+  // Curves: build path strings, skipping the entry region where moles_react ≈ 0
+  let dSC = '', dSD = '', dX = '';
+  let firstSC = true, firstSD = true, firstX = true;
+  for (let i = 0; i < simSel.W.length; i++) {
+    const x = px(simSel.W[i]);
+    if (simSel.SC[i] !== null) {
+      dSC += (firstSC ? 'M' : 'L') + x + ',' + py2(simSel.SC[i]) + ' ';
+      firstSC = false;
+    }
+    if (simSel.SD[i] !== null) {
+      dSD += (firstSD ? 'M' : 'L') + x + ',' + py2(simSel.SD[i]) + ' ';
+      firstSD = false;
+    }
+    dX += (firstX ? 'M' : 'L') + x + ',' + py2(simSel.X[i]) + ' ';
+    firstX = false;
+  }
+  parts.push(`<path d="${dX}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="5,3"/>`);
+  parts.push(`<path d="${dSC}" fill="none" stroke="#10b981" stroke-width="2.5"/>`);
+  parts.push(`<path d="${dSD}" fill="none" stroke="#ef4444" stroke-width="2"/>`);
+
+  // Hotspot marker line
+  const xh = px(simSel.W_h);
+  parts.push(`<line x1="${xh}" y1="${PAD.t}" x2="${xh}" y2="${PH-PAD.b}" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.7"/>`);
+
+  // Axis labels
+  parts.push(`<text class="axis-label" x="${PW/2}" y="${PH-8}" text-anchor="middle">Catalyst weight per tube  W  [kg]</text>`);
+  parts.push(`<text class="axis-label" x="14" y="${PH/2}" text-anchor="middle" transform="rotate(-90 14 ${PH/2})">Selectivity / Conversion  [—]</text>`);
+
+  plot2El.innerHTML = parts.join('');
+}
+
+// =============================================================================
+//   UI WIRING
+// =============================================================================
+const sTin = document.getElementById('sTin'), vTin = document.getElementById('vTin');
+const sTa  = document.getElementById('sTa'),  vTa  = document.getElementById('vTa');
+const sU   = document.getElementById('sU'),   vU   = document.getElementById('vU');
+
+const kpiTh = document.getElementById('kpiTh');
+const kpiX  = document.getElementById('kpiX');
+const kpiS  = document.getElementById('kpiS');
+const kpiG  = document.getElementById('kpiG');
+const stabBox = document.getElementById('stabBox');
+
+function update() {
+  const T_in = +sTin.value;
+  const T_a  = +sTa.value;
+  const U    = +sU.value;
+  vTin.textContent = T_in;
+  vTa.textContent  = T_a;
+  vU.textContent   = U;
+
+  const sim   = integrate(T_in, T_a, U, 200);
+  const summ  = summarize(sim);
+  // Gain: re-run with T_a + 1
+  const sim2  = integrate(T_in, T_a + 1, U, 200);
+  const summ2 = summarize(sim2);
+  const gain  = summ2.T_h - summ.T_h;
+
+  renderPlot(summ, T_in, T_a);
+  renderPlot2({
+    W: summ.W,
+    SC: summ.SC,
+    SD: summ.SD,
+    X:  summ.X_full,
+    W_h: summ.W_h
+  });
+
+  kpiTh.textContent = summ.T_h.toFixed(1);
+  kpiX .textContent = summ.X.toFixed(4);
+  kpiS .textContent = summ.S_C.toFixed(4);
+  kpiG .textContent = gain.toFixed(2);
+
+  if (gain < 2) {
+    stabBox.className = 'stability good';
+    stabBox.textContent = `🟢  STABLE   (Gain = ${gain.toFixed(2)} < 2)`;
+  } else {
+    stabBox.className = 'stability bad';
+    stabBox.textContent = `🔴  UNSTABLE   (Gain = ${gain.toFixed(2)} ≥ 2)  — design at runaway risk`;
+  }
+}
+
+[sTin, sTa, sU].forEach(el => el.addEventListener('input', update));
+
+document.getElementById('btnReset').addEventListener('click', () => {
+  sTin.value = 628; sTa.value = 600; sU.value = 50;
+  update();
+});
+
+update();
+</script>
+</body>
+</html>

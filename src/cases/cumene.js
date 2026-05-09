@@ -65,12 +65,14 @@ export default {
     conditions: {
       T_inlet: 628.15,
       P0: 35.0e5,                       // Pa (35 bar)
+      // Whole-reactor totals — the solver divides by the tube count when it
+      // builds its single-tube simulation (see hooks/useSolver.js).
       feedFlow: {
-        A: F_A0_TOTAL / N_TUBES,        // per tube basis
-        B: F_B0_TOTAL / N_TUBES,
+        A: F_A0_TOTAL,                  // 27.75 mol/s — propylene
+        B: F_B0_TOTAL,                  // 30.75 mol/s — benzene
         C: 0,
         D: 0,
-        I: F_I0_TOTAL / N_TUBES,
+        I: F_I0_TOTAL,                  //  1.46 mol/s — propane (inert)
       },
       XTarget: 0.99,
     },

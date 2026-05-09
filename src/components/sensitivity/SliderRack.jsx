@@ -4,7 +4,7 @@ import { useReactor } from '../../hooks/useReactor.js';
 import { useUnitSystem } from '../../hooks/useUnitSystem.js';
 
 /**
- * Live sliders for the four most sensitive design variables. Each move
+ * Live sliders for the most sensitive design variables. Each move
  * updates the global state, which triggers useAutoSolve (debounced) and
  * the existing OutputPanel re-renders automatically.
  */
@@ -44,14 +44,13 @@ export default function SliderRack() {
         onChange={(v) => set.nonIso({ U: fromDisplay(v, 'htc') })}
       />
       <Slider
-        label="F₀(A)"
-        unit={label('flow')}
-        min={toDisplay(0.001, 'flow')}
-        max={toDisplay(0.1, 'flow')}
-        step={toDisplay(0.0005, 'flow')}
-        precision={5}
-        value={toDisplay(c.feedFlow.A ?? 0, 'flow')}
-        onChange={(v) => set.feed({ A: fromDisplay(v, 'flow') })}
+        label="Inlet pressure"
+        unit={label('pressure')}
+        min={toDisplay(1e5, 'pressure')}
+        max={toDisplay(60e5, 'pressure')}
+        step={toDisplay(1e4, 'pressure')}
+        value={toDisplay(c.P0, 'pressure')}
+        onChange={(v) => set.conditions({ P0: fromDisplay(v, 'pressure') })}
       />
     </div>
   );

@@ -66,6 +66,7 @@ export default function SpeciesEditor() {
             value={sp.mw}
             onValue={(v) => update(i, { mw: v })}
             min={0}
+            unit="g/mol"
             aria-label={`Species ${i + 1} molecular weight`}
           />
           <Button

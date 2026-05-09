@@ -97,6 +97,7 @@ export default function ReactorConfigStep({ index = 3 }) {
               value={r.pbr.tubes}
               onValue={(v) => updPbr({ tubes: Math.max(1, Math.round(v)) })}
               precision={0}
+              unit="—"
               min={1}
             />
             <NumberInput

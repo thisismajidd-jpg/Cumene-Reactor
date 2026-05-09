@@ -22,6 +22,9 @@ export default class ErrorBoundary extends React.Component {
 
   render() {
     if (!this.state.error) return this.props.children;
+    // If a custom fallback was passed (e.g., null for decorative subtrees),
+    // honor it instead of showing the full-screen error UI.
+    if (this.props.fallback !== undefined) return this.props.fallback;
     return (
       <div className="min-h-screen bg-bg-base text-text-primary grid place-items-center p-6">
         <div className="surface max-w-lg p-6">

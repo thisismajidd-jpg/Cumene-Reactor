@@ -82,10 +82,17 @@ export const initialState = {
 
   // ── Optional constraints (null = inactive) ────────────────────────────
   constraints: {
-    Tmax: null,
-    Wmax: null,
-    Vmax: null,
-    Smin: null,
+    Tmax: null,            // K   – hotspot temperature ceiling
+    Tmin: null,            // K   – minimum operating temperature
+    dTmax: null,           // K   – maximum rise above inlet (T - T0)
+    Wmax: null,            // kg  – PBR catalyst weight ceiling
+    Vmax: null,            // m³  – PFR/CSTR volume ceiling
+    Pmin: null,            // Pa  – outlet pressure floor (PBR + Ergun)
+    dPmax: null,           // Pa  – pressure-drop ceiling (PBR + Ergun)
+    Xmin: null,            // —   – minimum required conversion
+    Xmax: null,            // —   – maximum allowed conversion
+    Ymin: null,            // —   – minimum required yield
+    Smin: null,            // —   – minimum required selectivity
   },
 
   // ── Solver bookkeeping ────────────────────────────────────────────────

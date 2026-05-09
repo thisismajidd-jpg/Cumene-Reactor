@@ -19,7 +19,8 @@ export default function App() {
     <ErrorBoundary>
       <ReactorProvider>
         <SkipLink targetId="main" />
-        <div className="min-h-screen bg-bg-base text-text-primary flex flex-col">
+
+        <div className="relative min-h-screen text-text-primary flex flex-col">
           <Navbar />
           <main id="main" className="flex-1">
             <Hero />

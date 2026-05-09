@@ -18,32 +18,32 @@
 // `fromDisplay(value, dim, system)` → number in SI
 
 export const DIMENSIONS = {
-  flow:        { si: 'mol/s',     eng: 'kmol/s' },
-  temperature: { si: 'K',         eng: '°C'     },
+  flow:        { si: 'mol/s',     eng: 'mol/s'  },
+  temperature: { si: 'K',         eng: 'K'      },
   pressure:    { si: 'Pa',        eng: 'bar'    },
   volume:      { si: 'm³',        eng: 'L'      },
-  weight:      { si: 'kg',        eng: 'tonne'  },
+  weight:      { si: 'kg',        eng: 'kg'     },
   energy:      { si: 'J/mol',     eng: 'kJ/mol' },
-  htc:         { si: 'W/(m²·K)',  eng: 'kcal/(h·m²·°C)' },
+  htc:         { si: 'W/(m²·K)',  eng: 'kcal/h·m²·°C' },
   length:      { si: 'm',         eng: 'mm'     },
   density:     { si: 'kg/m³',     eng: 'kg/m³'  },
   viscosity:   { si: 'Pa·s',      eng: 'cP'     },
   area:        { si: 'm²',        eng: 'm²'     },
-  conc:        { si: 'mol/m³',    eng: 'kmol/m³' },
+  conc:        { si: 'mol/m³',    eng: 'mol/L'  },
   fraction:    { si: '—',         eng: '—'      },
   dimensionless: { si: '—', eng: '—' },
 };
 
+// Multiplicative SI → engineering factors. Dimensions absent here keep their
+// SI numeric value in both systems (e.g. flow, temperature, weight).
 const FACTORS = {
-  flow:        { eng: 1 / 1000 },           // mol/s → kmol/s
   pressure:    { eng: 1 / 1e5 },            // Pa → bar
   volume:      { eng: 1000 },               // m³ → L
-  weight:      { eng: 1 / 1000 },           // kg → tonne
   energy:      { eng: 1 / 1000 },           // J/mol → kJ/mol
   htc:         { eng: 1 / 1.163 },          // W/(m²·K) → kcal/(h·m²·°C)
   length:      { eng: 1000 },               // m → mm
   viscosity:   { eng: 1000 },               // Pa·s → cP
-  conc:        { eng: 1 / 1000 },           // mol/m³ → kmol/m³
+  conc:        { eng: 1 / 1000 },           // mol/m³ → mol/L
 };
 
 export function unitLabel(dim, system) {
@@ -53,7 +53,6 @@ export function unitLabel(dim, system) {
 export function toDisplay(value, dim, system) {
   if (value == null || !Number.isFinite(value)) return value;
   if (system === 'si') return value;
-  if (dim === 'temperature') return value - 273.15;        // K → °C
   const f = FACTORS[dim];
   if (!f) return value;
   return value * f.eng;
@@ -62,7 +61,6 @@ export function toDisplay(value, dim, system) {
 export function fromDisplay(value, dim, system) {
   if (value == null || !Number.isFinite(value)) return value;
   if (system === 'si') return value;
-  if (dim === 'temperature') return value + 273.15;        // °C → K
   const f = FACTORS[dim];
   if (!f) return value;
   return value / f.eng;

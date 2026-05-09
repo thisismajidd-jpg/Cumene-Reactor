@@ -22,15 +22,20 @@ export default function SectionShell({
         <MotionFade className="mb-8 md:mb-10 flex items-end justify-between gap-6 flex-wrap">
           <div>
             {eyebrow && (
-              <p className="field-label text-accent-cyan mb-2">{eyebrow}</p>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-6 h-px bg-accent-cyan" aria-hidden />
+                <p className="field-label text-accent-cyan tracking-[0.18em]">
+                  {eyebrow}
+                </p>
+              </div>
             )}
             {title && (
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-text-primary">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-text-primary leading-tight">
                 {title}
               </h2>
             )}
             {description && (
-              <p className="mt-2 max-w-2xl text-text-muted">{description}</p>
+              <p className="mt-3 max-w-2xl text-text-muted leading-relaxed">{description}</p>
             )}
           </div>
           {action && <div className="shrink-0">{action}</div>}

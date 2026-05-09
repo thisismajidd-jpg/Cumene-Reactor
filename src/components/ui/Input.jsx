@@ -11,15 +11,19 @@ export default function Input({
 }) {
   const inputId = id || rest.name;
   return (
-    <div className={['flex flex-col gap-1.5', className].join(' ')}>
+    <div className={['flex flex-col gap-1.5 min-w-0', className].join(' ')}>
       {label && (
-        <label htmlFor={inputId} className="field-label">
+        <label
+          htmlFor={inputId}
+          className="field-label leading-snug break-words"
+          title={typeof label === 'string' ? label : undefined}
+        >
           {label}
         </label>
       )}
       <div
         className={[
-          'group flex items-center rounded-md bg-bg-elevated border transition-colors',
+          'group flex items-center min-w-0 rounded-md bg-bg-elevated border transition-colors overflow-hidden',
           error
             ? 'border-state-danger/60'
             : 'border-border focus-within:border-accent-cyan focus-within:shadow-glow',
@@ -29,12 +33,15 @@ export default function Input({
           id={inputId}
           {...rest}
           className={[
-            'flex-1 bg-transparent px-3 h-11 text-sm num text-text-primary',
+            'flex-1 min-w-0 bg-transparent px-3 h-11 text-sm num text-text-primary',
             'placeholder:text-text-subtle outline-none',
           ].join(' ')}
         />
         {unit && (
-          <span className="pr-3 pl-1 text-xs text-text-muted font-mono whitespace-nowrap">
+          <span
+            title={typeof unit === 'string' ? unit : undefined}
+            className="shrink-0 max-w-[14ch] overflow-hidden text-ellipsis whitespace-nowrap pr-3 pl-1 text-xs text-text-muted font-mono"
+          >
             {unit}
           </span>
         )}

@@ -35,6 +35,7 @@ export default function StoichEditor({ rxn, species, update }) {
             value={rxn.stoich[sp.id] ?? 0}
             onValue={(v) => setNu(sp.id, v)}
             precision={3}
+            unit="—"
             hint={
               (rxn.stoich[sp.id] ?? 0) < 0
                 ? 'reactant'

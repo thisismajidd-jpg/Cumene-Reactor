@@ -14,7 +14,6 @@ const AXIS_OPTIONS = [
   { id: 'thermal.Ta',  label: 'T_coolant [K]' },
   { id: 'thermal.Ua',  label: 'U·a (per kg) [W/(K·kg)]' },
   { id: 'feed.P0',     label: 'P0 [Pa]' },
-  { id: 'feed.F0.A',   label: 'F0(A) [mol/s]' },
 ];
 
 const METRICS = [
@@ -116,6 +115,10 @@ export default function ParametricStudy() {
 }
 
 function AxisRow({ label, axis, setAxis }) {
+  // Pull the unit out of the axis label, e.g. "T_inlet [K]" → "K".
+  const opt = AXIS_OPTIONS.find((o) => o.id === axis.id);
+  const m = opt?.label.match(/\[(.+)\]/);
+  const unit = m ? m[1] : '';
   return (
     <div className="rounded-md border border-border bg-bg-elevated p-3 space-y-2">
       <div className="field-label">{label}</div>
@@ -130,18 +133,21 @@ function AxisRow({ label, axis, setAxis }) {
           value={axis.from}
           onValue={(v) => setAxis({ ...axis, from: v })}
           precision={5}
+          unit={unit}
         />
         <NumberInput
           label="To"
           value={axis.to}
           onValue={(v) => setAxis({ ...axis, to: v })}
           precision={5}
+          unit={unit}
         />
         <NumberInput
           label="n"
           value={axis.n}
           onValue={(v) => setAxis({ ...axis, n: Math.max(2, Math.round(v)) })}
           precision={0}
+          unit="—"
           min={2}
           max={50}
         />

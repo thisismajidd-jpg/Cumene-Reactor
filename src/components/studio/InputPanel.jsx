@@ -3,9 +3,9 @@ import ReactionSetupStep from './steps/ReactionSetupStep.jsx';
 import OperatingConditionsStep from './steps/OperatingConditionsStep.jsx';
 import ReactorConfigStep from './steps/ReactorConfigStep.jsx';
 import ConstraintsStep from './steps/ConstraintsStep.jsx';
-import SolveButton from './SolveButton.jsx';
+import SolverStatusBar from './SolverStatusBar.jsx';
 
-export default function InputPanel({ onSolve }) {
+export default function InputPanel() {
   return (
     <div className="space-y-4">
       <ReactionSetupStep index={1} />
@@ -13,7 +13,7 @@ export default function InputPanel({ onSolve }) {
       <ReactorConfigStep index={3} />
       <ConstraintsStep index={4} />
       <div className="pt-1">
-        <SolveButton onSolve={onSolve} />
+        <SolverStatusBar />
       </div>
     </div>
   );
