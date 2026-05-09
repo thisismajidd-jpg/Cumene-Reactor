@@ -70,9 +70,10 @@ export default function NumberInput({
 
 function formatInitial(v, precision) {
   if (v == null || !Number.isFinite(v)) return '';
+  const p = Number.isFinite(precision) ? Math.min(100, Math.max(1, Math.round(precision))) : 6;
   const abs = Math.abs(v);
   if (abs !== 0 && (abs < 1e-3 || abs >= 1e6)) {
-    return v.toExponential(Math.max(0, precision - 1));
+    return v.toExponential(Math.max(0, p - 1));
   }
-  return String(+v.toPrecision(precision));
+  return String(+v.toPrecision(p));
 }
