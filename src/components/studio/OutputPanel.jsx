@@ -11,11 +11,11 @@ import { useUnitSystem } from '../../hooks/useUnitSystem.js';
 import { fmt, fmtPct } from '../../utils/format.js';
 
 const TABS = [
-  { id: 'X',  label: 'Conversion',         component: ConversionTab },
-  { id: 'T',  label: 'Temperature',        component: TemperatureTab },
-  { id: 'C',  label: 'Concentrations',     component: ConcentrationTab },
-  { id: 'SY', label: 'Selectivity & Yield', component: SelectivityTab },
-  { id: 'S',  label: 'Summary',            component: SummaryTab },
+  { id: 'X',  label: 'Conversion',     component: ConversionTab },
+  { id: 'T',  label: 'Temperature',    component: TemperatureTab },
+  { id: 'C',  label: 'Concentrations', component: ConcentrationTab },
+  { id: 'SY', label: 'Selectivity',    component: SelectivityTab },
+  { id: 'S',  label: 'Summary',        component: SummaryTab },
 ];
 
 export default function OutputPanel() {
@@ -156,11 +156,6 @@ function KpiFooter({ result, label, toDisplay }) {
         label="Selectivity"
         value={s.S_final != null ? fmt(s.S_final, 4) : '—'}
         accent="#10B981"
-      />
-      <Pill
-        label="Yield"
-        value={s.Y_final != null ? fmt(s.Y_final, 4) : '—'}
-        accent="#A855F7"
       />
       <Pill
         label="Limiting"

@@ -3,6 +3,15 @@ dist/
 dist-ssr/
 .vite/
 
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# claude
+.claude/
+
 # editor
 .vscode/*
 !.vscode/extensions.json

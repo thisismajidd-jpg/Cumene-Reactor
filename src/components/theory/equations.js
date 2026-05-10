@@ -80,10 +80,10 @@ export const EQUATIONS = [
   },
   {
     id: 'selectivity',
-    title: 'Selectivity & yield',
+    title: 'Selectivity',
     latex:
-      '\\;S_C \\;=\\; \\dfrac{F_C - F_{C,0}}{F_{A,0} - F_A},\\qquad Y_C \\;=\\; \\dfrac{F_C - F_{C,0}}{F_{A,0}}\\;',
-    blurb: 'Per-mole-A-consumed selectivity to the desired product C, and overall yield.',
+      '\\;S_C \\;=\\; \\dfrac{F_C - F_{C,0}}{F_{A,0} - F_A}\\;',
+    blurb: 'Selectivity of the desired product C per mole of limiting reactant A consumed.',
     legend: [
       ['F<sub>A,0</sub>, F<sub>A</sub>', 'inlet & outlet flow of limiting reactant A'],
       ['F<sub>C,0</sub>, F<sub>C</sub>', 'inlet & outlet flow of desired product C'],

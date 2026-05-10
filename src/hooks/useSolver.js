@@ -109,7 +109,6 @@ export function buildSolverConfig(state) {
       dPmax: state.constraints.dPmax,
       Xmin:  state.constraints.Xmin,
       Xmax:  state.constraints.Xmax,
-      Ymin:  state.constraints.Ymin,
       Smin:  state.constraints.Smin,
     },
   };

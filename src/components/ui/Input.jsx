@@ -15,10 +15,10 @@ export default function Input({
       {label && (
         <label
           htmlFor={inputId}
-          className="field-label leading-snug break-words"
+          className="field-label leading-tight break-words flex items-end min-h-[2.5rem]"
           title={typeof label === 'string' ? label : undefined}
         >
-          {label}
+          <span>{label}</span>
         </label>
       )}
       <div

@@ -88,8 +88,6 @@ function extractMetric(result, metric) {
       return tr.summary.X_final;
     case 'S':
       return tr.summary.S_final;
-    case 'Y':
-      return tr.summary.Y_final;
     case 'T_hotspot':
       return tr.summary.T_hotspot;
     case 'W_for_target':

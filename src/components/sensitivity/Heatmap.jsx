@@ -11,7 +11,8 @@ import { fmtCompact } from '../../utils/format.js';
  *   xLabel, yLabel
  *   metricLabel                       legend caption
  *   colorScheme: 'viridis' | 'rdylgn' | 'cyan'
- *   highlight: { i, j } | null        outline a specific cell (e.g. optimum)
+ *   highlight: { i, j } | null        outline a specific cell (e.g. best)
+ *   lowlight:  { i, j } | null        outline a specific cell (e.g. worst)
  */
 export default function Heatmap({
   grid,
@@ -22,6 +23,7 @@ export default function Heatmap({
   metricLabel = 'value',
   colorScheme = 'viridis',
   highlight = null,
+  lowlight = null,
 }) {
   const [hover, setHover] = useState(null);
 
@@ -71,7 +73,13 @@ export default function Heatmap({
           {grid.map((row, j) =>
             row.map((v, i) => {
               const isHover = hover && hover.i === i && hover.j === j;
-              const isHighlight = highlight && highlight.i === i && highlight.j === j;
+              const isBest  = highlight && highlight.i === i && highlight.j === j;
+              const isWorst = lowlight  && lowlight.i  === i && lowlight.j  === j;
+              const stroke = isBest ? '#FACC15'
+                           : isWorst ? '#EF4444'
+                           : isHover ? '#22D3EE'
+                           : 'rgba(0,0,0,0.4)';
+              const sw = isBest || isWorst ? 2 : 0.6;
               return (
                 <rect
                   key={`${i}-${j}`}
@@ -80,13 +88,28 @@ export default function Heatmap({
                   width={cellW}
                   height={cellH}
                   fill={colorAt(v)}
-                  stroke={isHighlight ? '#FACC15' : isHover ? '#22D3EE' : 'rgba(0,0,0,0.4)'}
-                  strokeWidth={isHighlight ? 2 : 0.6}
+                  stroke={stroke}
+                  strokeWidth={sw}
                   onMouseEnter={() => setHover({ i, j, v })}
                   onMouseLeave={() => setHover(null)}
                 />
               );
             })
+          )}
+          {/* Best / worst marker glyphs on top of cells */}
+          {highlight && (
+            <MarkerStar
+              x={highlight.i * cellW + cellW / 2}
+              y={(ny - 1 - highlight.j) * cellH + cellH / 2}
+              color="#FACC15"
+            />
+          )}
+          {lowlight && (
+            <MarkerCross
+              x={lowlight.i * cellW + cellW / 2}
+              y={(ny - 1 - lowlight.j) * cellH + cellH / 2}
+              color="#EF4444"
+            />
           )}
         </g>
         {xTickIdx.map((i) => (
@@ -139,6 +162,32 @@ export default function Heatmap({
         )}
       </svg>
     </div>
+  );
+}
+
+function MarkerStar({ x, y, color }) {
+  return (
+    <g transform={`translate(${x},${y})`} pointerEvents="none">
+      <circle r={6} fill="rgba(11,18,32,0.85)" />
+      <text
+        x={0} y={3} textAnchor="middle"
+        fontSize={11} fontWeight={700}
+        fill={color}
+      >★</text>
+    </g>
+  );
+}
+
+function MarkerCross({ x, y, color }) {
+  return (
+    <g transform={`translate(${x},${y})`} pointerEvents="none">
+      <circle r={6} fill="rgba(11,18,32,0.85)" />
+      <text
+        x={0} y={3.5} textAnchor="middle"
+        fontSize={11} fontWeight={700}
+        fill={color}
+      >✕</text>
+    </g>
   );
 }
 

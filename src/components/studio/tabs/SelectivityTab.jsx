@@ -24,7 +24,6 @@ export default function SelectivityTab({ result }) {
     return traj.ts.map((_, i) => ({
       X: traj.X[i],
       S: traj.S[i],
-      Y: traj.Y[i],
     }));
   }, [traj]);
 
@@ -32,14 +31,13 @@ export default function SelectivityTab({ result }) {
     return (
       <EmptyState
         title="Single reaction"
-        description="Enable a side reaction in step 1 to analyze selectivity and yield."
+        description="Enable a side reaction in step 1 to analyze selectivity."
       />
     );
   }
   if (!traj) return <EmptyState title="No trajectory" />;
 
   const sumFinal = traj.summary.S_final;
-  const yieldFinal = traj.summary.Y_final;
 
   return (
     <div className="space-y-4">
@@ -67,7 +65,7 @@ export default function SelectivityTab({ result }) {
               tick={{ fill: PLOT_THEME.axis, fontSize: 11 }}
               tickFormatter={(v) => v.toFixed(2)}
               label={{
-                value: 'S, Y',
+                value: 'Selectivity S',
                 angle: -90,
                 position: 'insideLeft',
                 fill: PLOT_THEME.axisLabel,
@@ -77,22 +75,13 @@ export default function SelectivityTab({ result }) {
             <Tooltip
               {...TOOLTIP_STYLE}
               labelFormatter={(v) => `X = ${fmt(v, 4)}`}
-              formatter={(v, n) => [fmt(v, 4), n === 'S' ? 'Selectivity' : 'Yield']}
+              formatter={(v) => [fmt(v, 4), 'Selectivity']}
             />
             <Line
               type="monotone"
               dataKey="S"
               stroke="#10B981"
-              strokeWidth={2.2}
-              dot={false}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="Y"
-              stroke="#22D3EE"
-              strokeWidth={2.2}
-              strokeDasharray="4 3"
+              strokeWidth={2.4}
               dot={false}
               isAnimationActive={false}
             />
@@ -105,9 +94,8 @@ export default function SelectivityTab({ result }) {
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <div className="grid grid-cols-2 gap-3 text-sm">
+      <div className="grid grid-cols-1 gap-3 text-sm">
         <Stat label="Selectivity (final)" value={fmt(sumFinal, 4)} />
-        <Stat label="Yield (final)" value={fmt(yieldFinal, 4)} />
       </div>
     </div>
   );

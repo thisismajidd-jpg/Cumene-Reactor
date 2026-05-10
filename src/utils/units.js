@@ -1,6 +1,6 @@
 // Unit conversion layer.
 //
-// The state and the solver both operate in **SI**:
+// State and solver always operate in **canonical SI base** units:
 //   F   mol/s
 //   T   K
 //   P   Pa
@@ -11,59 +11,98 @@
 //   U   W/(m²·K)
 //   ΔH  J/mol
 //
-// The UI displays values in either SI or "engineering" (industry-common) units.
-// All conversions go through this module — components never hand-roll factors.
+// The UI displays values in either SI or "engineering" units. Each dimension
+// has its own SI and engineering display unit, possibly with a multiplicative
+// factor and/or additive offset (e.g. K ↔ °C).
 //
-// `toDisplay(value, dim, system)`  → number in display units
-// `fromDisplay(value, dim, system)` → number in SI
+//   display = stored * factor + offset
+//   stored  = (display - offset) / factor
+//
+// Components NEVER hand-roll factors — they go through `toDisplay` /
+// `fromDisplay` / `unitLabel`.
 
-export const DIMENSIONS = {
-  flow:        { si: 'mol/s',     eng: 'mol/s'  },
-  temperature: { si: 'K',         eng: 'K'      },
-  pressure:    { si: 'Pa',        eng: 'bar'    },
-  volume:      { si: 'm³',        eng: 'L'      },
-  weight:      { si: 'kg',        eng: 'kg'     },
-  energy:      { si: 'J/mol',     eng: 'kJ/mol' },
-  htc:         { si: 'W/(m²·K)',  eng: 'kcal/h·m²·°C' },
-  length:      { si: 'm',         eng: 'mm'     },
-  density:     { si: 'kg/m³',     eng: 'kg/m³'  },
-  viscosity:   { si: 'Pa·s',      eng: 'cP'     },
-  area:        { si: 'm²',        eng: 'm²'     },
-  conc:        { si: 'mol/m³',    eng: 'mol/L'  },
-  fraction:    { si: '—',         eng: '—'      },
-  dimensionless: { si: '—', eng: '—' },
+const I = { factor: 1, offset: 0 };
+
+// Per-dimension display config. Keys with no entry stay numerically unchanged
+// in both systems (treated as identity).
+const DIMS = {
+  flow: {
+    si:  { unit: 'mol/s',   factor: 1,    offset: 0 },
+    eng: { unit: 'kmol/h',  factor: 3.6,  offset: 0 },        // mol/s × 3.6 = kmol/h
+  },
+  temperature: {
+    si:  { unit: 'K',       factor: 1,    offset: 0 },
+    eng: { unit: '°C',      factor: 1,    offset: -273.15 },
+  },
+  pressure: {
+    si:  { unit: 'bar',     factor: 1e-5, offset: 0 },        // Pa → bar
+    eng: { unit: 'atm',     factor: 1 / 101325, offset: 0 },  // Pa → atm
+  },
+  volume: {
+    si:  { unit: 'm³',      factor: 1,    offset: 0 },
+    eng: { unit: 'L',       factor: 1000, offset: 0 },
+  },
+  weight: {
+    si:  { unit: 'kg',      factor: 1,    offset: 0 },
+    eng: { unit: 'g',       factor: 1000, offset: 0 },
+  },
+  energy: {
+    si:  { unit: 'kJ/mol',   factor: 1e-3,        offset: 0 },
+    eng: { unit: 'kcal/mol', factor: 1 / 4184,    offset: 0 }, // 1 kcal = 4184 J
+  },
+  htc: {
+    si:  { unit: 'W/(m²·K)',         factor: 1,           offset: 0 },
+    eng: { unit: 'kcal/(h·m²·°C)',   factor: 1 / 1.163,   offset: 0 },
+  },
+  length: {
+    si:  { unit: 'm',  factor: 1,    offset: 0 },
+    eng: { unit: 'mm', factor: 1000, offset: 0 },
+  },
+  density: {
+    si:  { unit: 'kg/m³', factor: 1, offset: 0 },
+    eng: { unit: 'kg/m³', factor: 1, offset: 0 },
+  },
+  viscosity: {
+    si:  { unit: 'Pa·s', factor: 1,    offset: 0 },
+    eng: { unit: 'cP',   factor: 1000, offset: 0 },
+  },
+  area: {
+    si:  { unit: 'm²', factor: 1, offset: 0 },
+    eng: { unit: 'm²', factor: 1, offset: 0 },
+  },
+  conc: {
+    si:  { unit: 'mol/m³', factor: 1,    offset: 0 },
+    eng: { unit: 'mol/L',  factor: 1e-3, offset: 0 },
+  },
+  fraction:      { si: { unit: '—', ...I }, eng: { unit: '—', ...I } },
+  dimensionless: { si: { unit: '—', ...I }, eng: { unit: '—', ...I } },
 };
 
-// Multiplicative SI → engineering factors. Dimensions absent here keep their
-// SI numeric value in both systems (e.g. flow, temperature, weight).
-const FACTORS = {
-  pressure:    { eng: 1 / 1e5 },            // Pa → bar
-  volume:      { eng: 1000 },               // m³ → L
-  energy:      { eng: 1 / 1000 },           // J/mol → kJ/mol
-  htc:         { eng: 1 / 1.163 },          // W/(m²·K) → kcal/(h·m²·°C)
-  length:      { eng: 1000 },               // m → mm
-  viscosity:   { eng: 1000 },               // Pa·s → cP
-  conc:        { eng: 1 / 1000 },           // mol/m³ → mol/L
-};
+// Back-compat shape for any consumer that imported the old DIMENSIONS map.
+export const DIMENSIONS = Object.fromEntries(
+  Object.entries(DIMS).map(([k, v]) => [k, { si: v.si.unit, eng: v.eng.unit }])
+);
+
+function pick(dim, system) {
+  const d = DIMS[dim];
+  if (!d) return { unit: '', factor: 1, offset: 0 };
+  return system === 'si' ? d.si : d.eng;
+}
 
 export function unitLabel(dim, system) {
-  return DIMENSIONS[dim]?.[system === 'engineering' ? 'eng' : 'si'] ?? '';
+  return pick(dim, system).unit;
 }
 
 export function toDisplay(value, dim, system) {
   if (value == null || !Number.isFinite(value)) return value;
-  if (system === 'si') return value;
-  const f = FACTORS[dim];
-  if (!f) return value;
-  return value * f.eng;
+  const { factor, offset } = pick(dim, system);
+  return value * factor + offset;
 }
 
 export function fromDisplay(value, dim, system) {
   if (value == null || !Number.isFinite(value)) return value;
-  if (system === 'si') return value;
-  const f = FACTORS[dim];
-  if (!f) return value;
-  return value / f.eng;
+  const { factor, offset } = pick(dim, system);
+  return (value - offset) / factor;
 }
 
 /**

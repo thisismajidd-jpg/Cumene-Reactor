@@ -91,7 +91,6 @@ export const initialState = {
     dPmax: null,           // Pa  – pressure-drop ceiling (PBR + Ergun)
     Xmin: null,            // —   – minimum required conversion
     Xmax: null,            // —   – maximum allowed conversion
-    Ymin: null,            // —   – minimum required yield
     Smin: null,            // —   – minimum required selectivity
   },
 

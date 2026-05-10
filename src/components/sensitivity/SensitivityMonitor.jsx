@@ -49,7 +49,6 @@ export default function SensitivityMonitor() {
       x: toDisplay(t, xDim),
       X: traj.X[i],
       S: traj.S[i],
-      Y: traj.Y[i],
       T: toDisplay(traj.T[i], 'temperature'),
     }));
   }, [traj, xDim, toDisplay]);
@@ -315,22 +314,12 @@ export default function SensitivityMonitor() {
                     dot={false}
                     isAnimationActive={false}
                   />
-                  <Line
-                    type="monotone"
-                    dataKey="Y"
-                    name="Y"
-                    stroke="#A855F7"
-                    strokeWidth={1.8}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
             <PlotLegend
               items={[
                 { color: '#10B981', label: 'S — selectivity' },
-                { color: '#A855F7', label: 'Y — yield' },
                 { color: '#3B82F6', dashed: true, label: 'X — conversion' },
               ]}
             />

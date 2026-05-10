@@ -25,7 +25,6 @@ const KNOBS = [
 // Scales are loose; small differences are smoothed by the weight slider.
 const OBJECTIVES = [
   { id: 'maxS', label: 'Selectivity (S)',     metric: 'S',            higherBetter: true,  scale: 1   },
-  { id: 'maxY', label: 'Yield (Y)',           metric: 'Y',            higherBetter: true,  scale: 1   },
   { id: 'maxX', label: 'Conversion (X)',      metric: 'X',            higherBetter: true,  scale: 1   },
   { id: 'minW', label: 'Required W (low)',    metric: 'W_for_target', higherBetter: false, scale: 50  },
   { id: 'minT', label: 'Hotspot T (low)',     metric: 'T_hotspot',    higherBetter: false, scale: 100 },
@@ -92,6 +91,13 @@ export default function OptimizerPanel() {
             if (params[i] < b.lo - 1e-9 || params[i] > b.hi + 1e-9) {
               return { ok: false };
             }
+          }
+          // Physical constraint: coolant temp must stay below feed temp.
+          const taIdx = knobIds.indexOf('thermal.Ta');
+          if (taIdx !== -1) {
+            const t0Idx = knobIds.indexOf('feed.T0');
+            const currentT0 = t0Idx !== -1 ? params[t0Idx] : baseConfig.feed.T0;
+            if (params[taIdx] >= currentT0) return { ok: false };
           }
           const r = solveReactor(cfg);
           if (!r?.ok || !r.trajectory) return { ok: false };
@@ -328,19 +334,28 @@ export default function OptimizerPanel() {
       )}
 
       {/* ── Constraints note ────────────────────────────────────────── */}
-      <div className="rounded-md border border-border bg-bg-elevated/40 p-3 mb-3 text-xs text-text-muted">
+      <div className="rounded-md border border-border bg-bg-elevated/40 p-3 mb-3 text-xs">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="field-label text-accent-cyan">Design constraints respected</span>
+          <span className="text-text-muted">
+            {hasActiveConstraints ? `${activeConstraintCount(c)} active` : 'none active'}
+          </span>
+        </div>
         {hasActiveConstraints ? (
-          <>
-            <span className="text-accent-cyan font-medium">
-              Design constraints respected:
-            </span>{' '}
-            {summarizeConstraints(c)}
-          </>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 num text-text-muted">
+            {summarizeConstraints(c, unitLabel, toDisplay).map((row) => (
+              <li key={row.key} className="flex items-baseline justify-between gap-2">
+                <span>{row.label}</span>
+                <span className="text-text-primary">{row.value}</span>
+              </li>
+            ))}
+          </ul>
         ) : (
-          <>
-            No active design constraints. Set them in step 4 of the Studio to
-            penalize infeasible regions during the search.
-          </>
+          <p className="text-text-muted">
+            Set constraints in step 4 of the Studio (e.g. Tmax for thermal runaway,
+            Smin for product purity, Wmax for catalyst budget) to penalize infeasible
+            regions during the search.
+          </p>
         )}
       </div>
 
@@ -415,7 +430,6 @@ function extractMetric(result, metric) {
   switch (metric) {
     case 'X':            return result.trajectory.summary.X_final;
     case 'S':            return result.trajectory.summary.S_final;
-    case 'Y':            return result.trajectory.summary.Y_final;
     case 'W_for_target': return result.trajectory.summary.W_for_target ?? NaN;
     case 'T_hotspot':    return result.trajectory.summary.T_hotspot;
     default:             return NaN;
@@ -436,22 +450,34 @@ function constraintPenalty(result, c) {
   if (c.Tmin != null && s.T_final  < c.Tmin) pen += 100 * (c.Tmin - s.T_final);
   if (c.Smin != null && s.S_final  < c.Smin) pen += 1000 * (c.Smin - s.S_final);
   if (c.Xmin != null && s.X_final  < c.Xmin) pen += 1000 * (c.Xmin - s.X_final);
-  if (c.Ymin != null && s.Y_final  < c.Ymin) pen += 1000 * (c.Ymin - s.Y_final);
   return pen;
 }
 
-function summarizeConstraints(c) {
-  const parts = [];
-  if (c.Tmax != null)  parts.push('Tmax');
-  if (c.Tmin != null)  parts.push('Tmin');
-  if (c.dTmax != null) parts.push('ΔTmax');
-  if (c.Wmax != null)  parts.push('Wmax');
-  if (c.Vmax != null)  parts.push('Vmax');
-  if (c.Pmin != null)  parts.push('Pmin');
-  if (c.dPmax != null) parts.push('ΔPmax');
-  if (c.Xmin != null)  parts.push('Xmin');
-  if (c.Xmax != null)  parts.push('Xmax');
-  if (c.Ymin != null)  parts.push('Ymin');
-  if (c.Smin != null)  parts.push('Smin');
-  return parts.join(' · ');
+function activeConstraintCount(c) {
+  return Object.values(c).filter((v) => v != null).length;
+}
+
+function summarizeConstraints(c, unitLabel, toDisplay) {
+  const out = [];
+  const dim = (key, dimName, label) => {
+    if (c[key] == null) return;
+    const u = unitLabel(dimName);
+    const v = toDisplay(c[key], dimName);
+    out.push({ key, label, value: `${fmt(v, 4)} ${u}` });
+  };
+  const raw = (key, label, suffix = '') => {
+    if (c[key] == null) return;
+    out.push({ key, label, value: `${fmt(c[key], 4)}${suffix ? ' ' + suffix : ''}` });
+  };
+  dim('Tmax', 'temperature', 'T ≤ Tmax');
+  dim('Tmin', 'temperature', 'T ≥ Tmin');
+  raw('dTmax', 'ΔT ≤', 'K');
+  dim('Wmax', 'weight', 'W ≤ Wmax');
+  dim('Vmax', 'volume', 'V ≤ Vmax');
+  dim('Pmin', 'pressure', 'P ≥ Pmin');
+  dim('dPmax', 'pressure', 'ΔP ≤');
+  raw('Xmin', 'X ≥ Xmin');
+  raw('Xmax', 'X ≤ Xmax');
+  raw('Smin', 'S ≥ Smin');
+  return out;
 }

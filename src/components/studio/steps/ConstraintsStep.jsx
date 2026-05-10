@@ -97,7 +97,7 @@ export default function ConstraintsStep({ index = 4 }) {
 
       {/* ── Performance constraints ────────────────────────────────────────── */}
       <SectionHeader title="Performance" />
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <NumberInput
           label="Min conversion (Xmin)"
           value={c.Xmin == null ? '' : c.Xmin}
@@ -112,16 +112,6 @@ export default function ConstraintsStep({ index = 4 }) {
           label="Max conversion (Xmax)"
           value={c.Xmax == null ? '' : c.Xmax}
           onValue={(v) => set.constraints({ Xmax: v })}
-          placeholder="off"
-          unit="—"
-          min={0}
-          max={1}
-          precision={4}
-        />
-        <NumberInput
-          label="Min yield (Ymin)"
-          value={c.Ymin == null ? '' : c.Ymin}
-          onValue={(v) => set.constraints({ Ymin: v })}
           placeholder="off"
           unit="—"
           min={0}

@@ -2,8 +2,8 @@ import React from 'react';
 import { useUnitSystem } from '../../hooks/useUnitSystem.js';
 
 const OPTIONS = [
-  { id: 'si', label: 'SI', hint: 'mol/s · K · Pa · m³ · kg' },
-  { id: 'engineering', label: 'Eng', hint: 'mol/s · K · bar · L · kg' },
+  { id: 'si', label: 'SI', hint: 'mol/s · K · bar · m³ · kg' },
+  { id: 'engineering', label: 'Eng', hint: 'kmol/h · °C · atm · L · g' },
 ];
 
 export default function UnitToggle({ className = '' }) {

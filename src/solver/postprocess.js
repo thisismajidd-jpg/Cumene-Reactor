@@ -200,13 +200,6 @@ export function processTrajectory({
       message: `Final X ${(100 * X_final).toFixed(1)}% > Xmax ${(100 * constraints.Xmax).toFixed(1)}%.`,
     });
   }
-  if (constraints?.Ymin != null && Y_final < constraints.Ymin) {
-    warnings.push({
-      level: 'warning',
-      code: 'YIELD_LOW',
-      message: `Final yield ${(100 * Y_final).toFixed(1)}% < Ymin ${(100 * constraints.Ymin).toFixed(1)}%.`,
-    });
-  }
   if (constraints?.Smin != null && S_final < constraints.Smin) {
     warnings.push({
       level: 'warning',

@@ -48,10 +48,6 @@ export default function SummaryTab({ result }) {
       k: 'Selectivity (final)',
       v: traj.summary.S_final ? fmt(traj.summary.S_final, 4) : '—',
     },
-    {
-      k: 'Yield (final)',
-      v: traj.summary.Y_final ? fmt(traj.summary.Y_final, 4) : '—',
-    },
     { k: 'Limiting reactant', v: traj.summary.limitingSpecies ?? '—' },
     { k: 'Main product', v: traj.summary.mainProduct ?? '—' },
   ];

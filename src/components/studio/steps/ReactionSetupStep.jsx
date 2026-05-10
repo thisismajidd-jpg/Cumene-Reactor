@@ -45,7 +45,7 @@ export default function ReactionSetupStep({ index = 1 }) {
             checked={rx.sideReactionEnabled}
             onChange={(v) => set.toggleSide(v)}
             label="Enable side reaction"
-            description="Adds a second reaction (e.g. A + C → D) for selectivity / yield analysis."
+            description="Adds a second reaction (e.g. A + C → D) for selectivity analysis."
           />
         </div>
 
