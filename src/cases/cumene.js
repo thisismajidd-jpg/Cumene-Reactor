@@ -2,7 +2,7 @@
 //
 // Optimised operating point (CHPE4512, SQU, Group 03):
 //   Multi-tube fixed-bed PBR · non-isothermal
-//   T_inlet = 625 K (351.9 °C), T_coolant = 620 K (346.9 °C), U = 120 W/(m²·K)
+//   T_inlet = 628 K (354.9 °C), T_coolant = 620 K (346.9 °C), U = 120 W/(m²·K)
 //   Achieves X = 99%+ at S_cumene ≈ 93.2 % (best selectivity in feasible region)
 //   U = 120 is achievable with high-pressure steam or hot-oil shell cooling.
 //   Calibrated A1 ≈ 22.7, A2 ≈ 13.77  ΔH₁ = −99.4 kJ/mol, ΔH₂ = −95.3 kJ/mol
@@ -21,7 +21,7 @@ export default {
   title: 'Cumene production',
   subtitle: 'Multi-tube non-isothermal PBR — optimised operating point',
   tagline:
-    'Propylene + Benzene → Cumene, with the parasitic A + C → DIPB side reaction. Optimised at T_in = 625 K, T_cool = 620 K, U = 120 W/(m²·K) for X ≥ 99 % at maximum selectivity.',
+    'Propylene + Benzene → Cumene, with the parasitic A + C → DIPB side reaction. Optimised at T_in = 628 K, T_cool = 620 K, U = 120 W/(m²·K) for X ≥ 99 % at maximum selectivity.',
   reaction: {
     A: 'Propylene', B: 'Benzene', C: 'Cumene', D: 'DIPB', I: 'Propane',
   },
@@ -64,7 +64,7 @@ export default {
       },
     },
     conditions: {
-      T_inlet: 625,                        // K (351.9 °C) — optimised
+      T_inlet: 628,                        // K (354.9 °C) — optimised
       P0: 35.0e5,                       // Pa (35 bar)
       // Whole-reactor totals — the solver divides by the tube count when it
       // builds its single-tube simulation (see hooks/useSolver.js).
@@ -113,8 +113,8 @@ export default {
     },
   },
   narrative: [
-    'Operating conditions were optimised over a grid of T_inlet × T_coolant × U to maximise selectivity subject to X ≥ 0.99. The winner: **T_in = 625 K, T_cool = 620 K, U = 120 W/(m²·K)**.',
-    'The key insight: keeping T_coolant only **5 K below T_inlet** with a high U makes the reactor nearly isothermal at ~625 K. Because the side reaction has a higher activation energy (Ea₂ = 120.2 kJ/mol > Ea₁ = 104.2 kJ/mol), lower controlled temperature maximises S_cumene.',
+    'Operating conditions were optimised over a grid of T_inlet × T_coolant × U to maximise selectivity subject to X ≥ 0.99. The winner: **T_in = 628 K, T_cool = 620 K, U = 120 W/(m²·K)**.',
+    'The key insight: keeping T_coolant only **5 K below T_inlet** with a high U makes the reactor nearly isothermal at ~628 K. Because the side reaction has a higher activation energy (Ea₂ = 120.2 kJ/mol > Ea₁ = 104.2 kJ/mol), lower controlled temperature maximises S_cumene.',
     'U = 120 W/(m²·K) is industrially achievable with **high-pressure steam or hot-oil shell cooling** on a 1-inch tube bundle — within the standard 80–200 W/(m²·K) range for gas/steam systems.',
     'The hotspot is only **+7.5 K above T_inlet** (632.5 K) — far below the Memo 5 baseline hotspot. Reactor gain drops well below 2 — the system is comfortably stable.',
   ],
