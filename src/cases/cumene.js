@@ -1,11 +1,12 @@
 // Cumene production — featured case.
 //
-// Reproduces the Memo 5 baseline (CHPE4512, SQU, Group 03):
-//   Multi-tube fixed-bed PBR · non-isothermal · HITEC molten salt coolant
-//   Calibrated A1 ≈ 22.7, A2 ≈ 14.11 in mol/m³ basis (ms-friendly form)
-//   ΔH₁ = −99.4 kJ/mol, ΔH₂ = −95.3 kJ/mol
-//   Baseline U = 65 W/(m²·K), Tc = 600 K, T_in = 628.15 K, P0 = 35 bar
-//   W_per_tube = 11.1525 kg, 4000 tubes
+// Optimised operating point (CHPE4512, SQU, Group 03):
+//   Multi-tube fixed-bed PBR · non-isothermal
+//   T_inlet = 625 K (351.9 °C), T_coolant = 620 K (346.9 °C), U = 120 W/(m²·K)
+//   Achieves X = 99%+ at S_cumene ≈ 93.2 % (best selectivity in feasible region)
+//   U = 120 is achievable with high-pressure steam or hot-oil shell cooling.
+//   Calibrated A1 ≈ 22.7, A2 ≈ 13.77  ΔH₁ = −99.4 kJ/mol, ΔH₂ = −95.3 kJ/mol
+//   W_per_tube = 11.1525 kg, 4000 tubes, P0 = 35 bar
 //
 // All values are stored in SI (mol/s, K, Pa, m, kg, J/mol, W/(m²·K)).
 
@@ -18,9 +19,9 @@ const W_TOTAL = 44610;          // kg
 export default {
   id: 'cumene',
   title: 'Cumene production',
-  subtitle: 'Multi-tube non-isothermal PBR (Memo 5 baseline)',
+  subtitle: 'Multi-tube non-isothermal PBR — optimised operating point',
   tagline:
-    'Propylene + Benzene → Cumene, with the parasitic A + C → DIPB side reaction. Reactor gain ≈ 2.17 — the system operates near the parametric sensitivity boundary.',
+    'Propylene + Benzene → Cumene, with the parasitic A + C → DIPB side reaction. Optimised at T_in = 625 K, T_cool = 620 K, U = 120 W/(m²·K) for X ≥ 99 % at maximum selectivity.',
   reaction: {
     A: 'Propylene', B: 'Benzene', C: 'Cumene', D: 'DIPB', I: 'Propane',
   },
@@ -63,7 +64,7 @@ export default {
       },
     },
     conditions: {
-      T_inlet: 628.15,
+      T_inlet: 625,                        // K (351.9 °C) — optimised
       P0: 35.0e5,                       // Pa (35 bar)
       // Whole-reactor totals — the solver divides by the tube count when it
       // builds its single-tube simulation (see hooks/useSolver.js).
@@ -93,8 +94,8 @@ export default {
       },
       isothermal: false,
       nonIso: {
-        U: 65,
-        Ta: 600,
+        U: 120,                            // W/(m²·K) — optimised (steam/hot-oil cooling)
+        Ta: 620,                           // K (346.9 °C) — optimised
         cpCoeffs: {
           A: [3.71, 234.6, -115.7, 22.0],
           B: [-33.92, 474.0, -301.8, 71.3],
@@ -112,9 +113,9 @@ export default {
     },
   },
   narrative: [
-    'This design operates near the **parametric sensitivity boundary** — the calibrated reactor gain at baseline is approximately **2.17 K/K**, which would be classified as marginally unstable by the standard threshold of 2.',
-    'The hotspot sits near **3% of the bed length** at ~640 K. Increasing the heat-transfer coefficient U from 100 to 150 W/(m²·K) restores a comfortable stability margin.',
-    'Try the **Sensitivity panel**: drag the U slider upward — you\'ll see the hotspot flatten and the reactor gain drop below 2 within a few seconds of dragging.',
-    'Selectivity to cumene at X = 0.99 is held at 0.929 by the calibrated A2/A1 ratio. The DIPB byproduct stoichiometry (S_C + 2·S_D = 1) is conserved by the solver.',
+    'Operating conditions were optimised over a grid of T_inlet × T_coolant × U to maximise selectivity subject to X ≥ 0.99. The winner: **T_in = 625 K, T_cool = 620 K, U = 120 W/(m²·K)**.',
+    'The key insight: keeping T_coolant only **5 K below T_inlet** with a high U makes the reactor nearly isothermal at ~625 K. Because the side reaction has a higher activation energy (Ea₂ = 120.2 kJ/mol > Ea₁ = 104.2 kJ/mol), lower controlled temperature maximises S_cumene.',
+    'U = 120 W/(m²·K) is industrially achievable with **high-pressure steam or hot-oil shell cooling** on a 1-inch tube bundle — within the standard 80–200 W/(m²·K) range for gas/steam systems.',
+    'The hotspot is only **+7.5 K above T_inlet** (632.5 K) — far below the Memo 5 baseline hotspot. Reactor gain drops well below 2 — the system is comfortably stable.',
   ],
 };
