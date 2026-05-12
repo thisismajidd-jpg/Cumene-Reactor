@@ -19,7 +19,11 @@ function computeSizing(reactor) {
     const p = reactor.pbr ?? {};
     const W_total = p.perTube ? (p.W ?? 0) * (p.tubes ?? 1) : (p.W ?? 0);
     const rho_b = p.rho_b ?? 0;
-    V = rho_b > 0 ? W_total / rho_b : 0;
+    const phi   = p.phi   ?? 0;
+    // Course convention (Memo 2): V = W / ρ_c where ρ_c = ρ_b / (1 − φ).
+    // Memo 2 used ρ_c = 1150 as "bulk density", giving 38.8 m³ (not 77.58 m³).
+    const rho_c = (phi < 1 && rho_b > 0) ? rho_b / (1 - phi) : rho_b;
+    V = rho_c > 0 ? W_total / rho_c : 0;
   }
   if (!Number.isFinite(V) || V <= 0) return null;
 
@@ -29,10 +33,13 @@ function computeSizing(reactor) {
 
   if (type === 'PBR') {
     const p = reactor.pbr ?? {};
-    const tubes = p.tubes ?? 1;
-    const Dt = p.Dt ?? 0;
+    const tubes  = p.tubes ?? 1;
+    const Dt     = p.Dt ?? 0;
+    const phi    = p.phi ?? 0;
+    const rho_b  = p.rho_b ?? 0;
+    const rho_c  = (phi < 1 && rho_b > 0) ? rho_b / (1 - phi) : rho_b;
     const W_per_tube = p.perTube ? (p.W ?? 0) : (p.W ?? 0) / Math.max(tubes, 1);
-    const V_per_tube = p.rho_b > 0 ? W_per_tube / p.rho_b : 0;
+    const V_per_tube = rho_c > 0 ? W_per_tube / rho_c : 0;
     const A_t = Math.PI * Dt * Dt / 4;
     const L_per_tube = A_t > 0 ? V_per_tube / A_t : 0;
     Object.assign(out, { tubes, Dt, V_per_tube, L_per_tube });
