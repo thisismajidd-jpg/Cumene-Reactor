@@ -25,54 +25,57 @@ const I = { factor: 1, offset: 0 };
 
 // Per-dimension display config. Keys with no entry stay numerically unchanged
 // in both systems (treated as identity).
+// Engineering = US customary (lbmol/hr, °F, psi, lb, gal, ft, …).
+// SI stays metric with the conventions used inside the solver
+// (T in K, P in Pa internally but displayed in bar).
 const DIMS = {
   flow: {
-    si:  { unit: 'mol/s',   factor: 1,    offset: 0 },
-    eng: { unit: 'kmol/h',  factor: 3.6,  offset: 0 },        // mol/s × 3.6 = kmol/h
+    si:  { unit: 'mol/s',     factor: 1,         offset: 0 },
+    eng: { unit: 'lbmol/hr',  factor: 7.936641,  offset: 0 },  // mol/s → lbmol/hr
   },
   temperature: {
-    si:  { unit: 'K',       factor: 1,    offset: 0 },
-    eng: { unit: '°C',      factor: 1,    offset: -273.15 },
+    si:  { unit: 'K',         factor: 1,         offset: 0 },
+    eng: { unit: '°F',        factor: 1.8,       offset: -459.67 }, // K → °F
   },
   pressure: {
-    si:  { unit: 'bar',     factor: 1e-5, offset: 0 },        // Pa → bar
-    eng: { unit: 'atm',     factor: 1 / 101325, offset: 0 },  // Pa → atm
+    si:  { unit: 'bar',       factor: 1e-5,      offset: 0 },           // Pa → bar
+    eng: { unit: 'psi',       factor: 1.450377e-4, offset: 0 },         // Pa → psi
   },
   volume: {
-    si:  { unit: 'm³',      factor: 1,    offset: 0 },
-    eng: { unit: 'L',       factor: 1000, offset: 0 },
+    si:  { unit: 'm³',        factor: 1,         offset: 0 },
+    eng: { unit: 'gal',       factor: 264.17205, offset: 0 },           // m³ → US gal
   },
   weight: {
-    si:  { unit: 'kg',      factor: 1,    offset: 0 },
-    eng: { unit: 'g',       factor: 1000, offset: 0 },
+    si:  { unit: 'kg',        factor: 1,         offset: 0 },
+    eng: { unit: 'lb',        factor: 2.20462262, offset: 0 },          // kg → lb
   },
   energy: {
-    si:  { unit: 'kJ/mol',   factor: 1e-3,        offset: 0 },
-    eng: { unit: 'kcal/mol', factor: 1 / 4184,    offset: 0 }, // 1 kcal = 4184 J
+    si:  { unit: 'kJ/mol',    factor: 1e-3,      offset: 0 },
+    eng: { unit: 'BTU/lbmol', factor: 0.4299226, offset: 0 },           // J/mol → BTU/lbmol
   },
   htc: {
-    si:  { unit: 'W/(m²·K)',         factor: 1,           offset: 0 },
-    eng: { unit: 'kcal/(h·m²·°C)',   factor: 1 / 1.163,   offset: 0 },
+    si:  { unit: 'W/(m²·K)',            factor: 1,         offset: 0 },
+    eng: { unit: 'BTU/(h·ft²·°F)',      factor: 0.176110,  offset: 0 }, // W/(m²·K) → BTU/(h·ft²·°F)
   },
   length: {
-    si:  { unit: 'm',  factor: 1,    offset: 0 },
-    eng: { unit: 'mm', factor: 1000, offset: 0 },
+    si:  { unit: 'm',         factor: 1,         offset: 0 },
+    eng: { unit: 'ft',        factor: 3.2808399, offset: 0 },           // m → ft
   },
   density: {
-    si:  { unit: 'kg/m³', factor: 1, offset: 0 },
-    eng: { unit: 'kg/m³', factor: 1, offset: 0 },
+    si:  { unit: 'kg/m³',     factor: 1,         offset: 0 },
+    eng: { unit: 'lb/ft³',    factor: 0.0624280, offset: 0 },           // kg/m³ → lb/ft³
   },
   viscosity: {
-    si:  { unit: 'Pa·s', factor: 1,    offset: 0 },
-    eng: { unit: 'cP',   factor: 1000, offset: 0 },
+    si:  { unit: 'Pa·s',      factor: 1,         offset: 0 },
+    eng: { unit: 'cP',        factor: 1000,      offset: 0 },           // Pa·s → cP
   },
   area: {
-    si:  { unit: 'm²', factor: 1, offset: 0 },
-    eng: { unit: 'm²', factor: 1, offset: 0 },
+    si:  { unit: 'm²',        factor: 1,         offset: 0 },
+    eng: { unit: 'ft²',       factor: 10.7639104, offset: 0 },          // m² → ft²
   },
   conc: {
-    si:  { unit: 'mol/m³', factor: 1,    offset: 0 },
-    eng: { unit: 'mol/L',  factor: 1e-3, offset: 0 },
+    si:  { unit: 'mol/m³',    factor: 1,         offset: 0 },
+    eng: { unit: 'lbmol/ft³', factor: 6.242796e-5, offset: 0 },         // mol/m³ → lbmol/ft³
   },
   fraction:      { si: { unit: '—', ...I }, eng: { unit: '—', ...I } },
   dimensionless: { si: { unit: '—', ...I }, eng: { unit: '—', ...I } },

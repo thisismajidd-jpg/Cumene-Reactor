@@ -3,7 +3,7 @@ import { useUnitSystem } from '../../hooks/useUnitSystem.js';
 
 const OPTIONS = [
   { id: 'si', label: 'SI', hint: 'mol/s · K · bar · m³ · kg' },
-  { id: 'engineering', label: 'Eng', hint: 'kmol/h · °C · atm · L · g' },
+  { id: 'engineering', label: 'Eng', hint: 'lbmol/hr · °F · psi · gal · lb' },
 ];
 
 export default function UnitToggle({ className = '' }) {

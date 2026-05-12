@@ -58,6 +58,8 @@ export default function RateLawEditor({ rxn, species, update }) {
         />
       </div>
 
+      <ThermicityBadge dHrx={rxn.dHrx} />
+
       <div>
         <p className="field-label mb-2">Reaction orders α (per species)</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -79,6 +81,42 @@ export default function RateLawEditor({ rxn, species, update }) {
       </div>
 
       <RatePreview rxn={rxn} />
+    </div>
+  );
+}
+
+function ThermicityBadge({ dHrx }) {
+  // ΔH is auto-classified: <0 exothermic, >0 endothermic, =0 thermoneutral.
+  // No user toggle — the sign of ΔH is the source of truth.
+  if (!Number.isFinite(dHrx) || dHrx === 0) {
+    return (
+      <div className="rounded-md border border-border bg-bg-elevated/40 px-3 py-2 text-xs text-text-muted">
+        ΔH = 0 — thermoneutral
+      </div>
+    );
+  }
+  const exo = dHrx < 0;
+  return (
+    <div
+      className={[
+        'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs border',
+        exo
+          ? 'border-state-danger/40 bg-state-danger/10 text-state-danger'
+          : 'border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan',
+      ].join(' ')}
+      title={
+        exo
+          ? 'ΔH < 0 — releases heat. Energy balance shows T rising (or cooling needed).'
+          : 'ΔH > 0 — absorbs heat. Energy balance shows T dropping (or heating needed).'
+      }
+    >
+      <span aria-hidden>{exo ? '🔥' : '❄'}</span>
+      <span className="font-medium">
+        {exo ? 'Exothermic' : 'Endothermic'}
+      </span>
+      <span className="text-text-muted">
+        · auto-detected from ΔH sign
+      </span>
     </div>
   );
 }
