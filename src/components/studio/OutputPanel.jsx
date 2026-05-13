@@ -6,6 +6,7 @@ import TemperatureTab from './tabs/TemperatureTab.jsx';
 import ConcentrationTab from './tabs/ConcentrationTab.jsx';
 import SelectivityTab from './tabs/SelectivityTab.jsx';
 import SummaryTab from './tabs/SummaryTab.jsx';
+import CostTab from './tabs/CostTab.jsx';
 import { useReactor } from '../../hooks/useReactor.js';
 import { useUnitSystem } from '../../hooks/useUnitSystem.js';
 import { fmt, fmtPct } from '../../utils/format.js';
@@ -16,6 +17,7 @@ const TABS = [
   { id: 'C',  label: 'Concentrations', component: ConcentrationTab },
   { id: 'SY', label: 'Selectivity',    component: SelectivityTab },
   { id: 'S',  label: 'Summary',        component: SummaryTab },
+  { id: '$',  label: 'Cost',           component: CostTab },
 ];
 
 export default function OutputPanel() {
@@ -30,10 +32,16 @@ export default function OutputPanel() {
       const disabled =
         (t.id === 'T' && state.reactor.isothermal) ||
         (t.id === 'SY' && !state.reaction.sideReactionEnabled) ||
+        (t.id === '$' && state.reactor.type !== 'PBR') ||
         (result?.reactorType === 'CSTR' && t.id !== 'S');
       return { id: t.id, label: t.label, disabled };
     });
-  }, [state.reactor.isothermal, state.reaction.sideReactionEnabled, result?.reactorType]);
+  }, [
+    state.reactor.isothermal,
+    state.reactor.type,
+    state.reaction.sideReactionEnabled,
+    result?.reactorType,
+  ]);
 
   const Active = TABS.find((t) => t.id === tab)?.component ?? ConversionTab;
 
