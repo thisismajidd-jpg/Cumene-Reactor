@@ -66,7 +66,13 @@ export function processTrajectory({
   }
 
   // ── Identify the global limiting reactant ────────────────────────────
-  const limitingSp = identifyLimiting(species, feed.F0, reactions);
+  // Prefer the explicit hint from the case (e.g. EO production picks C₂H₄
+  // even though the F/|ν| heuristic would tag O₂ because R2 has ν_O2 = -3).
+  // Falls back to the heuristic when no hint is supplied.
+  const limitingSp =
+    (feed.limitingSpecies && feed.F0?.[feed.limitingSpecies] > 0
+      ? feed.limitingSpecies
+      : null) ?? identifyLimiting(species, feed.F0, reactions);
   const F0_lim = limitingSp ? feed.F0[limitingSp] || 0 : 0;
   const Xarr = new Array(n);
   if (limitingSp && F0_lim > 0) {

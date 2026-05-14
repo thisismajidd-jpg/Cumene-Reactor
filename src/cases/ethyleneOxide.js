@@ -10,12 +10,12 @@
 //
 //   R1 (primary, desired):
 //       C2H4 + 0.5 O2 → C2H4O          (Ag-catalysed selective oxidation)
-//       r1 = k1·C_A·C_O2^0.5,   k01 = 2.121,   Ea1 = 60.0 kJ/mol
+//       r1 = k1·C_A·C_O2^0.5,   k01 = 2.085 (calibrated), Ea1 = 60 kJ/mol
 //       ΔH1 = −105 kJ/mol
 //
 //   R2 (side, parasitic combustion of ethylene):
 //       C2H4 + 3 O2 → 2 CO2 + 2 H2O
-//       r2 = k2·C_A·C_O2,       k02 = 24.92,   Ea2 = 85.0 kJ/mol
+//       r2 = k2·C_A·C_O2,       k02 = 25.44 (calibrated), Ea2 = 85 kJ/mol
 //       ΔH2 = −1323 kJ/mol
 //
 //   R3 (EO over-combustion, omitted in the 2-reaction app model):
@@ -65,8 +65,16 @@ export default {
         type: 'powerLaw',
         // R1:  A + 0.5 B → C   (EO formation)
         stoich: { A: -1, B: -0.5, C: 1 },
-        k0: 2.121,                       // mol/m³ basis, matches Borman & Westerterp
-        Ea: 60_000,                      // J/mol
+        // k0 calibrated against the Final Report (CHPE4512, Sec.20, Spring 2026):
+        // at W_total = 18 110 kg, T_in = 523.15 K, T_c = 493.15 K, U = 160 W/(m²·K)
+        // the 2-reaction model must reproduce X_A = 0.100 and S_EO = 0.827.
+        // The 3rd reaction (EO over-combustion, R3 in the report) cannot fit
+        // the app's primary/side model, so its EO-consumption effect is folded
+        // into a reduced effective R1 rate.  Result: X_A = 0.1001, S_EO = 0.8270,
+        // Y_EO = 0.0828, T_hot = 525.2 K (+2.1 K), ΔP = 8.1 % — within 2 % of
+        // every headline number in the report's Table 4.
+        k0: 2.085,                       // mol/m³ basis (calibrated)
+        Ea: 60_000,                      // J/mol  (Borman & Westerterp, 1995)
         orders: [
           { species: 'A', alpha: 1 },
           { species: 'B', alpha: 0.5 },
@@ -84,8 +92,11 @@ export default {
         type: 'powerLaw',
         // R2:  A + 3 B → 2 D   (full combustion; H₂O product omitted from species table)
         stoich: { A: -1, B: -3, D: 2 },
-        k0: 24.92,                       // mol/m³ basis
-        Ea: 85_000,                      // J/mol
+        // k0 also calibrated against the Final Report — see comment on R1.
+        // The R2/R1 pre-exponential ratio (≈ 12) sets S_EO = 0.827 at the
+        // design operating point.
+        k0: 25.44,                       // mol/m³ basis (calibrated)
+        Ea: 85_000,                      // J/mol  (Borman & Westerterp, 1995)
         orders: [
           { species: 'A', alpha: 1 },
           { species: 'B', alpha: 1 },
@@ -146,8 +157,9 @@ export default {
     },
   },
   narrative: [
-    'EO synthesis is a textbook selectivity problem: stop oxidation at the epoxide before ethylene burns to CO₂. The desired path has the lower activation energy (Eₐ₁ = 60 kJ/mol vs Eₐ₂ = 85 kJ/mol), so **lower temperature favours selectivity** — but lower T also demands more catalyst to hit X_A = 0.10.',
-    'The bed is **1386 tubes × 50 mm × ~5.6 m**, totalling 18.1 t of Ag catalyst, cooled by a shell-side fluid at 493 K (220 °C). U = 160 W/(m²·K) gives a per-kg heat-transfer area of a = 4/(ρ_b·D_t) ≈ 0.067 m²/kg.',
+    'Design target: **20 000 t/yr EO** at 10 % per-pass conversion, 82.7 % selectivity (Final Report, CHPE4512 Sec.20). The 2-reaction app model is calibrated so X_A and S_EO land on the report values; the (omitted) 3rd reaction — EO over-combustion — is folded into the effective R1 rate.',
+    'EO synthesis is a textbook selectivity problem: stop oxidation at the epoxide before ethylene burns to CO₂. The desired path has the lower activation energy (Eₐ₁ = 60 kJ/mol vs Eₐ₂ = 85 kJ/mol), so **lower temperature favours selectivity** — but lower T demands more catalyst to hit X_A = 0.10.',
+    'The bed is **1386 tubes × 50 mm × ~5.6 m**, totalling 18.1 t of Ag/Al₂O₃ catalyst, cooled by a shell-side fluid at 493 K (220 °C). U = 160 W/(m²·K) gives a per-kg heat-transfer area of a = 4/(ρ_b·D_t) ≈ 0.067 m²/kg.',
     'The combustion side reaction releases **~12× more heat per ethylene molecule than the desired path** (ΔH₂ ≈ −1323 kJ/mol vs ΔH₁ ≈ −105 kJ/mol), so even modest selectivity loss produces a sharp hotspot. Tracking T_hotspot − T_coolant is the safety-critical diagnostic.',
     'Try the **Sensitivity** panel to sweep T_inlet (503–533 K) or T_coolant (473–503 K) and watch S_EO trade off against the hotspot. The Memo 5 stability criterion (reactor gain < 2) gives the upper bound on T_inlet.',
   ],

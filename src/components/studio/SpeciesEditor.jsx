@@ -34,23 +34,27 @@ export default function SpeciesEditor() {
 
   return (
     <div className="space-y-3">
+      {/* Column ratios are tuned so MW and formula always show the full value.
+          ID is a 1–3 character key, so it gets the smallest column; MW often
+          hits 3-decimal numbers like 162.276 plus a "g/mol" suffix, so it
+          gets the largest. */}
       <div className="grid grid-cols-12 gap-2 text-xs text-text-muted px-1">
-        <div className="col-span-2">ID</div>
-        <div className="col-span-4">Name</div>
+        <div className="col-span-1">ID</div>
+        <div className="col-span-3">Name</div>
         <div className="col-span-3">Formula</div>
-        <div className="col-span-2">MW (g/mol)</div>
+        <div className="col-span-4">MW (g/mol)</div>
         <div className="col-span-1" />
       </div>
       {species.map((sp, i) => (
         <div key={sp.id} className="grid grid-cols-12 gap-2 items-center">
           <Input
-            className="col-span-2"
+            className="col-span-1"
             value={sp.id}
             onChange={(e) => update(i, { id: e.target.value.trim().slice(0, 3).toUpperCase() })}
             aria-label={`Species ${i + 1} id`}
           />
           <Input
-            className="col-span-4"
+            className="col-span-3"
             value={sp.name}
             onChange={(e) => update(i, { name: e.target.value })}
             aria-label={`Species ${i + 1} name`}
@@ -62,11 +66,12 @@ export default function SpeciesEditor() {
             aria-label={`Species ${i + 1} formula`}
           />
           <NumberInput
-            className="col-span-2"
+            className="col-span-4"
             value={sp.mw}
             onValue={(v) => update(i, { mw: v })}
             min={0}
             unit="g/mol"
+            precision={5}
             aria-label={`Species ${i + 1} molecular weight`}
           />
           <Button

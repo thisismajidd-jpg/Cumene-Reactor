@@ -39,10 +39,17 @@ export function buildSolverConfig(state) {
     F0[id] = (state.conditions.feedFlow[id] ?? 0) / tubeDivisor;
   }
 
+  // Forward the case's explicit limiting-species hint (the species marked
+  // `isLimiting: true` in the species table).  Postprocess uses it instead of
+  // the F/|ν| heuristic so X is reported on the species the user actually
+  // designs around — e.g. ethylene in the EO case, not oxygen.
+  const limitingHint = state.reaction.species.find((s) => s.isLimiting)?.id;
+
   const feed = {
     F0,
     T0: state.conditions.T_inlet,
     P0: state.conditions.P0,
+    limitingSpecies: limitingHint,
   };
 
   // Reactor block

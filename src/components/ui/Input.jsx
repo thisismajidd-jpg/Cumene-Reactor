@@ -33,14 +33,16 @@ export default function Input({
           id={inputId}
           {...rest}
           className={[
-            'flex-1 min-w-0 bg-transparent px-3 h-11 text-sm num text-text-primary',
+            // Tightened horizontal padding so long numeric values (e.g. 162.276,
+            // 4 167 lbmol/hr, 1.323e+6 J/mol) still fit when the cell is narrow.
+            'flex-1 min-w-0 bg-transparent px-2 h-11 text-sm num text-text-primary',
             'placeholder:text-text-subtle outline-none',
           ].join(' ')}
         />
         {unit && (
           <span
             title={typeof unit === 'string' ? unit : undefined}
-            className="shrink-0 max-w-[14ch] overflow-hidden text-ellipsis whitespace-nowrap pr-3 pl-1 text-xs text-text-muted font-mono"
+            className="shrink-0 max-w-[14ch] overflow-hidden text-ellipsis whitespace-nowrap pr-2 pl-1 text-[11px] text-text-muted font-mono"
           >
             {unit}
           </span>
