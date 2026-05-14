@@ -34,12 +34,7 @@ export default {
         dHrx: 0,
         desired: true,
       },
-      sideReactionEnabled: false,
-      side: {
-        type: 'elementary',
-        stoich: { },
-        k0: 1, Ea: 1, orders: [], adsorption: [], dHrx: 0, desired: false,
-      },
+      sides: [],
     },
     conditions: {
       T_inlet: 350,

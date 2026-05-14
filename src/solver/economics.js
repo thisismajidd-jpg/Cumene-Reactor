@@ -127,32 +127,66 @@ function inletVolumetricFlow(feedFlow, T_K, P_Pa) {
   return (FT * R_GAS * T_K) / P_Pa;     // m³/s
 }
 
-// Compute reaction extents from inlet/outlet flows using a species that
-// participates in only one reaction.  For the cumene case B appears only in
-// rxn 1 and D only in rxn 2, so this is exact.
-function computeExtents(reaction, F_in, F_out) {
-  const s1 = reaction.primary?.stoich ?? {};
-  const s2 = reaction.side?.stoich ?? {};
-  let ext1 = 0;
-  let ext2 = 0;
+// Heat-of-reaction × extent → total reaction duty (W, positive when releasing).
+//
+// We solve the linear system  Σ_j ν_{ij} · ξ_j = ΔF_i   in the least-squares
+// sense across all species, where ν is the stoichiometry matrix and ΔF is the
+// flow change.  This handles any number of reactions in one shot and is exact
+// when reactions are linearly independent (the normal case).
+function computeReactionHeat(reaction, F_in, F_out) {
+  const all = [reaction.primary, ...((reaction.sides ?? []))].filter(Boolean);
+  if (all.length === 0) return 0;
 
-  for (const sp in s1) {
-    const n1 = s1[sp] ?? 0;
-    const n2 = s2[sp] ?? 0;
-    if (n1 !== 0 && n2 === 0) {
-      ext1 = ((F_in[sp] ?? 0) - (F_out[sp] ?? 0)) / -n1;
-      break;
+  // Collect all species touched by any reaction
+  const speciesSet = new Set();
+  for (const r of all) for (const sp in (r.stoich ?? {})) speciesSet.add(sp);
+  const species = [...speciesSet];
+
+  // Build A (species × reactions) and b (ΔF per species)
+  const m = species.length;
+  const n = all.length;
+  const A = species.map((sp) => all.map((r) => (r.stoich?.[sp] ?? 0)));
+  const b = species.map((sp) => (F_out[sp] ?? 0) - (F_in[sp] ?? 0));
+
+  // Normal equations  AᵀA · ξ = Aᵀb,  solved by tiny Gauss-elimination.
+  const AtA = Array.from({ length: n }, () => new Array(n).fill(0));
+  const Atb = new Array(n).fill(0);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      for (let k = 0; k < m; k++) AtA[i][j] += A[k][i] * A[k][j];
+    }
+    for (let k = 0; k < m; k++) Atb[i] += A[k][i] * b[k];
+  }
+  const ext = gaussSolve(AtA, Atb);
+  if (!ext) return 0;
+
+  // Heat released = Σ_j (−ΔH_j) · ξ_j  (positive for exothermic)
+  let Q = 0;
+  for (let j = 0; j < n; j++) Q += -(all[j].dHrx ?? 0) * ext[j];
+  return Q;
+}
+
+// Tiny Gauss elimination with partial pivoting. Returns null on singular.
+function gaussSolve(A, b) {
+  const n = A.length;
+  const M = A.map((row, i) => [...row, b[i]]);
+  for (let i = 0; i < n; i++) {
+    let pivot = i;
+    for (let k = i + 1; k < n; k++) if (Math.abs(M[k][i]) > Math.abs(M[pivot][i])) pivot = k;
+    if (Math.abs(M[pivot][i]) < 1e-12) return null;
+    [M[i], M[pivot]] = [M[pivot], M[i]];
+    for (let k = i + 1; k < n; k++) {
+      const f = M[k][i] / M[i][i];
+      for (let j = i; j <= n; j++) M[k][j] -= f * M[i][j];
     }
   }
-  for (const sp in s2) {
-    const n1 = s1[sp] ?? 0;
-    const n2 = s2[sp] ?? 0;
-    if (n2 !== 0 && n1 === 0) {
-      ext2 = ((F_in[sp] ?? 0) - (F_out[sp] ?? 0)) / -n2;
-      break;
-    }
+  const x = new Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let s = M[i][n];
+    for (let j = i + 1; j < n; j++) s -= M[i][j] * x[j];
+    x[i] = s / M[i][i];
   }
-  return { ext1, ext2 };
+  return x;
 }
 
 // ── Main entry point ────────────────────────────────────────────────────
@@ -226,13 +260,11 @@ export function computeEconomics(state, result, assumptions = {}) {
   const tonnesD_out = annualTonnes(F_out.D ?? 0, MW.D, a.operatingHours);
 
   // ── Cooling duty (W) ──────────────────────────────────────────────
-  // Steady-state: heat released = −ΔH₁·ξ₁ − ΔH₂·ξ₂.  At the optimised
-  // near-isothermal operating point this also equals the heat the coolant
-  // must remove (sensible heat-up of the product stream is negligible).
-  const { ext1, ext2 } = computeExtents(reaction, F_in, F_out);
-  const dH1 = reaction.primary?.dHrx ?? 0;
-  const dH2 = reaction.side?.dHrx ?? 0;
-  const Q_W = Math.max(0, -(ext1 * dH1 + ext2 * dH2));
+  // Steady-state: heat released = Σ_j −ΔH_j · ξ_j  over every reaction
+  // (primary + each side).  At the optimised near-isothermal operating point
+  // this also equals the heat the coolant must remove (sensible heat-up of
+  // the product stream is negligible).
+  const Q_W = Math.max(0, computeReactionHeat(reaction, F_in, F_out));
   const annualHeat_GJ = (Q_W * 3600 * a.operatingHours) / 1e9;
 
   // ── Pumping electricity ───────────────────────────────────────────

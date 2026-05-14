@@ -48,20 +48,22 @@ export default {
         dHrx: -99_400,
         desired: true,
       },
-      sideReactionEnabled: true,
-      side: {
-        type: 'elementary',
-        stoich: { A: -1, C: -1, D: 1 },
-        k0: 14.11,                     // calibrated for S = 0.929
-        Ea: 120_200,                   // J/mol (memo 5)
-        orders: [
-          { species: 'A', alpha: 1 },
-          { species: 'C', alpha: 1 },
-        ],
-        adsorption: [],
-        dHrx: -95_300,
-        desired: false,
-      },
+      sides: [
+        // R2 — parasitic A + C → D (DIPB formation)
+        {
+          type: 'elementary',
+          stoich: { A: -1, C: -1, D: 1 },
+          k0: 14.11,                     // calibrated for S = 0.929
+          Ea: 120_200,                   // J/mol (memo 5)
+          orders: [
+            { species: 'A', alpha: 1 },
+            { species: 'C', alpha: 1 },
+          ],
+          adsorption: [],
+          dHrx: -95_300,
+          desired: false,
+        },
+      ],
     },
     conditions: {
       T_inlet: 628,                        // K (354.9 °C) — optimised

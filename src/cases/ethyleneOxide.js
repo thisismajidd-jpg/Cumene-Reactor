@@ -5,24 +5,23 @@
 // Data extracted from "Ethylene oxide production.py" (Borman & Westerterp
 // kinetics, Froment heat-transfer correlation, NIST WebBook ΔH values).
 //
-// Reactions (the Python project includes three; this case implements the two
-// that fit the app's primary/side model):
+// Reactions (all three from the Final Report — now that the app supports an
+// open-ended `sides` list, we model the full network using literature values):
 //
 //   R1 (primary, desired):
 //       C2H4 + 0.5 O2 → C2H4O          (Ag-catalysed selective oxidation)
-//       r1 = k1·C_A·C_O2^0.5,   k01 = 2.085 (calibrated), Ea1 = 60 kJ/mol
-//       ΔH1 = −105 kJ/mol
+//       r1 = k1·C_A·C_O2^0.5,   k01 = 2.121, Ea1 = 60 kJ/mol
+//       ΔH1 = −105 kJ/mol               (Borman & Westerterp, 1995)
 //
 //   R2 (side, parasitic combustion of ethylene):
 //       C2H4 + 3 O2 → 2 CO2 + 2 H2O
-//       r2 = k2·C_A·C_O2,       k02 = 25.44 (calibrated), Ea2 = 85 kJ/mol
-//       ΔH2 = −1323 kJ/mol
+//       r2 = k2·C_A·C_O2,       k02 = 24.92, Ea2 = 85 kJ/mol
+//       ΔH2 = −1323 kJ/mol              (Borman & Westerterp, 1995)
 //
-//   R3 (EO over-combustion, omitted in the 2-reaction app model):
-//       C2H4O + 2.5 O2 → 2 CO2 + 2 H2O,   k03 = 12.0, Ea3 = 83 kJ/mol,
-//       ΔH3 = −1218 kJ/mol.  At the X_A = 0.10 design target the EO outlet
-//       flow is small enough that dropping R3 changes S_EO by ≲ 1 percentage
-//       point — acceptable for this case.
+//   R3 (side, EO over-oxidation):
+//       C2H4O + 2.5 O2 → 2 CO2 + 2 H2O
+//       r3 = k3·C_EO·C_O2,      k03 = 12.0, Ea3 = 83 kJ/mol
+//       ΔH3 = −1218 kJ/mol              (Stoukides & Pavlou, 1986)
 //
 // References
 //   [1] Borman, P. C.; Westerterp, K. R. Ind. Eng. Chem. Res. 1995, 34(1), 49.
@@ -60,20 +59,13 @@ export default {
       primary: {
         // Power-law (not 'elementary') because Borman & Westerterp's kinetic
         // order in O₂ (½) is independent of the stoichiometric coefficient.
-        // Using 'elementary' would tie the order to |ν| and silently produce
-        // the wrong rate law for R2 below.
         type: 'powerLaw',
         // R1:  A + 0.5 B → C   (EO formation)
         stoich: { A: -1, B: -0.5, C: 1 },
-        // k0 calibrated against the Final Report (CHPE4512, Sec.20, Spring 2026):
-        // at W_total = 18 110 kg, T_in = 523.15 K, T_c = 493.15 K, U = 160 W/(m²·K)
-        // the 2-reaction model must reproduce X_A = 0.100 and S_EO = 0.827.
-        // The 3rd reaction (EO over-combustion, R3 in the report) cannot fit
-        // the app's primary/side model, so its EO-consumption effect is folded
-        // into a reduced effective R1 rate.  Result: X_A = 0.1001, S_EO = 0.8270,
-        // Y_EO = 0.0828, T_hot = 525.2 K (+2.1 K), ΔP = 8.1 % — within 2 % of
-        // every headline number in the report's Table 4.
-        k0: 2.085,                       // mol/m³ basis (calibrated)
+        // Borman & Westerterp (1995) literature value.  With all three
+        // reactions now active (the app supports an open-ended sides list),
+        // we no longer need to fold R3's effect into R1.
+        k0: 2.121,                       // mol/m³ basis (literature)
         Ea: 60_000,                      // J/mol  (Borman & Westerterp, 1995)
         orders: [
           { species: 'A', alpha: 1 },
@@ -83,28 +75,42 @@ export default {
         dHrx: -105_000,                  // J/mol  (exothermic)
         desired: true,
       },
-      sideReactionEnabled: true,
-      side: {
+      sides: [
+        // R2 — parasitic combustion of ethylene.
         // Power-law: rate is first-order in O₂ even though three moles of O₂
-        // are consumed per ethylene burnt.  Treating this as 'elementary'
-        // would use ν_B = −3 as the order on O₂ and inflate r₂ by C_B² (~10³),
-        // causing the energy balance to run away.
-        type: 'powerLaw',
-        // R2:  A + 3 B → 2 D   (full combustion; H₂O product omitted from species table)
-        stoich: { A: -1, B: -3, D: 2 },
-        // k0 also calibrated against the Final Report — see comment on R1.
-        // The R2/R1 pre-exponential ratio (≈ 12) sets S_EO = 0.827 at the
-        // design operating point.
-        k0: 25.44,                       // mol/m³ basis (calibrated)
-        Ea: 85_000,                      // J/mol  (Borman & Westerterp, 1995)
-        orders: [
-          { species: 'A', alpha: 1 },
-          { species: 'B', alpha: 1 },
-        ],
-        adsorption: [],
-        dHrx: -1_323_000,                // J/mol  (highly exothermic)
-        desired: false,
-      },
+        // are consumed per ethylene burnt.  ('elementary' would use |ν_B| = 3
+        // as the order and inflate the rate by ~C_B² → thermal runaway.)
+        {
+          type: 'powerLaw',
+          stoich: { A: -1, B: -3, D: 2 },
+          k0: 24.92,                     // mol/m³ basis (Borman & Westerterp, 1995)
+          Ea: 85_000,                    // J/mol
+          orders: [
+            { species: 'A', alpha: 1 },
+            { species: 'B', alpha: 1 },
+          ],
+          adsorption: [],
+          dHrx: -1_323_000,              // J/mol
+          desired: false,
+        },
+        // R3 — EO over-oxidation (the third reaction from the Final Report).
+        //   C₂H₄O + 2.5 O₂ → 2 CO₂ + 2 H₂O   (H₂O omitted from species table)
+        //   r3 = k3·C_C·C_B    (first-order in EO, first-order in O₂)
+        //   Stoukides & Pavlou (1986)
+        {
+          type: 'powerLaw',
+          stoich: { C: -1, B: -2.5, D: 2 },
+          k0: 12.0,                      // mol/m³ basis
+          Ea: 83_000,                    // J/mol  (Stoukides & Pavlou, 1986)
+          orders: [
+            { species: 'C', alpha: 1 },
+            { species: 'B', alpha: 1 },
+          ],
+          adsorption: [],
+          dHrx: -1_218_000,              // J/mol
+          desired: false,
+        },
+      ],
     },
     conditions: {
       T_inlet: 523.15,                   // K (250 °C)  — Memo 5 baseline
@@ -157,7 +163,7 @@ export default {
     },
   },
   narrative: [
-    'Design target: **20 000 t/yr EO** at 10 % per-pass conversion, 82.7 % selectivity (Final Report, CHPE4512 Sec.20). The 2-reaction app model is calibrated so X_A and S_EO land on the report values; the (omitted) 3rd reaction — EO over-combustion — is folded into the effective R1 rate.',
+    'Design target: **20 000 t/yr EO** at 10 % per-pass conversion, 82.7 % selectivity (Final Report, CHPE4512 Sec.20). The full **three-reaction network** is modelled — R1 (selective oxidation, desired), R2 (full combustion of ethylene), and R3 (EO over-oxidation) — with literature kinetics (Borman & Westerterp 1995; Stoukides & Pavlou 1986).',
     'EO synthesis is a textbook selectivity problem: stop oxidation at the epoxide before ethylene burns to CO₂. The desired path has the lower activation energy (Eₐ₁ = 60 kJ/mol vs Eₐ₂ = 85 kJ/mol), so **lower temperature favours selectivity** — but lower T demands more catalyst to hit X_A = 0.10.',
     'The bed is **1386 tubes × 50 mm × ~5.6 m**, totalling 18.1 t of Ag/Al₂O₃ catalyst, cooled by a shell-side fluid at 493 K (220 °C). U = 160 W/(m²·K) gives a per-kg heat-transfer area of a = 4/(ρ_b·D_t) ≈ 0.067 m²/kg.',
     'The combustion side reaction releases **~12× more heat per ethylene molecule than the desired path** (ΔH₂ ≈ −1323 kJ/mol vs ΔH₁ ≈ −105 kJ/mol), so even modest selectivity loss produces a sharp hotspot. Tracking T_hotspot − T_coolant is the safety-critical diagnostic.',

@@ -17,7 +17,7 @@ import EmptyState from './EmptyState.jsx';
 export default function SelectivityTab({ result }) {
   const { state } = useReactor();
   const traj = result?.trajectory;
-  const sideOn = state.reaction.sideReactionEnabled;
+  const sideOn = (state.reaction.sides ?? []).length > 0;
 
   const data = useMemo(() => {
     if (!traj) return [];

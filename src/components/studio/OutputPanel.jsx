@@ -27,11 +27,12 @@ export default function OutputPanel() {
   const result = state.solver.result;
   const status = state.solver.status;
 
+  const sideCount = (state.reaction.sides ?? []).length;
   const tabs = useMemo(() => {
     return TABS.map((t) => {
       const disabled =
         (t.id === 'T' && state.reactor.isothermal) ||
-        (t.id === 'SY' && !state.reaction.sideReactionEnabled) ||
+        (t.id === 'SY' && sideCount === 0) ||
         (t.id === '$' && state.reactor.type !== 'PBR') ||
         (result?.reactorType === 'CSTR' && t.id !== 'S');
       return { id: t.id, label: t.label, disabled };
@@ -39,7 +40,7 @@ export default function OutputPanel() {
   }, [
     state.reactor.isothermal,
     state.reactor.type,
-    state.reaction.sideReactionEnabled,
+    sideCount,
     result?.reactorType,
   ]);
 

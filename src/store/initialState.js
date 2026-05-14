@@ -26,20 +26,10 @@ export const initialState = {
       dHrx: -80_000,                       // J/mol
       desired: true,
     },
-    sideReactionEnabled: false,
-    side: {
-      type: 'elementary',
-      stoich: { A: -1, C: -1, D: 1 },
-      k0: 1e5,
-      Ea: 100_000,
-      orders: [
-        { species: 'A', alpha: 1 },
-        { species: 'C', alpha: 1 },
-      ],
-      adsorption: [],
-      dHrx: -50_000,
-      desired: false,
-    },
+    // Side reactions are stored as a list — empty means none. Add/remove via
+    // the actions ADD_SIDE / REMOVE_SIDE_AT / SET_SIDE_AT.  Each side reaction
+    // has the same shape as `primary`.
+    sides: [],
   },
 
   // ── Operating conditions ──────────────────────────────────────────────

@@ -7,7 +7,7 @@ import CaseExplainer from './CaseExplainer.jsx';
 export default function CaseCard({ caseDef, onLoad, active }) {
   const reactorType = caseDef.state.reactor.type;
   const isothermal = caseDef.state.reactor.isothermal;
-  const sideOn = caseDef.state.reaction.sideReactionEnabled;
+  const sideOn = (caseDef.state.reaction.sides ?? []).length > 0;
   const tone = active ? 'cyan' : 'default';
 
   return (

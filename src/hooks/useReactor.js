@@ -18,8 +18,13 @@ export function useReactor() {
         unitSystem: (value) => dispatch({ type: ACTIONS.SET_UNIT_SYSTEM, payload: value }),
         reaction: (patch) => dispatch({ type: ACTIONS.SET_REACTION, payload: patch }),
         primary: (patch) => dispatch({ type: ACTIONS.SET_PRIMARY, payload: patch }),
-        side: (patch) => dispatch({ type: ACTIONS.SET_SIDE, payload: patch }),
-        toggleSide: (enabled) => dispatch({ type: ACTIONS.TOGGLE_SIDE, payload: enabled }),
+        // Side reactions are an open-ended list. `addSide()` appends a blank
+        // template (or a seed if you pass one); `removeSide(i)` drops index i;
+        // `sideAt(i, patch)` shallow-merges a patch into side i.
+        addSide: (seed) => dispatch({ type: ACTIONS.ADD_SIDE, payload: seed }),
+        removeSide: (index) => dispatch({ type: ACTIONS.REMOVE_SIDE_AT, payload: index }),
+        sideAt: (index, patch) =>
+          dispatch({ type: ACTIONS.SET_SIDE_AT, payload: { index, patch } }),
         species: (list) => dispatch({ type: ACTIONS.SET_SPECIES, payload: list }),
         conditions: (patch) => dispatch({ type: ACTIONS.SET_CONDITIONS, payload: patch }),
         feed: (patch) => dispatch({ type: ACTIONS.SET_FEED, payload: patch }),

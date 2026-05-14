@@ -8,8 +8,9 @@ export const ACTIONS = {
   SET_UNIT_SYSTEM:    'SET_UNIT_SYSTEM',
   SET_REACTION:       'SET_REACTION',
   SET_PRIMARY:        'SET_PRIMARY',
-  SET_SIDE:           'SET_SIDE',
-  TOGGLE_SIDE:        'TOGGLE_SIDE',
+  ADD_SIDE:           'ADD_SIDE',
+  REMOVE_SIDE_AT:     'REMOVE_SIDE_AT',
+  SET_SIDE_AT:        'SET_SIDE_AT',
   SET_SPECIES:        'SET_SPECIES',
   SET_CONDITIONS:     'SET_CONDITIONS',
   SET_FEED:           'SET_FEED',
@@ -40,23 +41,54 @@ export function reducer(state, action) {
         },
       };
 
-    case ACTIONS.SET_SIDE:
+    case ACTIONS.ADD_SIDE: {
+      // Append a new side reaction. Payload (optional) seeds the initial shape;
+      // when omitted we fall back to a sensible blank template.
+      const template = action.payload ?? {
+        type: 'elementary',
+        stoich: { A: -1, C: -1, D: 1 },
+        k0: 1e5,
+        Ea: 100_000,
+        orders: [
+          { species: 'A', alpha: 1 },
+          { species: 'C', alpha: 1 },
+        ],
+        adsorption: [],
+        dHrx: -50_000,
+        desired: false,
+      };
       return {
         ...state,
         reaction: {
           ...state.reaction,
-          side: { ...state.reaction.side, ...action.payload },
+          sides: [...(state.reaction.sides ?? []), template],
         },
       };
+    }
 
-    case ACTIONS.TOGGLE_SIDE:
+    case ACTIONS.REMOVE_SIDE_AT: {
+      const idx = action.payload;
       return {
         ...state,
         reaction: {
           ...state.reaction,
-          sideReactionEnabled: action.payload ?? !state.reaction.sideReactionEnabled,
+          sides: (state.reaction.sides ?? []).filter((_, i) => i !== idx),
         },
       };
+    }
+
+    case ACTIONS.SET_SIDE_AT: {
+      const { index, patch } = action.payload;
+      return {
+        ...state,
+        reaction: {
+          ...state.reaction,
+          sides: (state.reaction.sides ?? []).map((s, i) =>
+            i === index ? { ...s, ...patch } : s,
+          ),
+        },
+      };
+    }
 
     case ACTIONS.SET_SPECIES:
       return {

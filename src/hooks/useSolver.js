@@ -18,12 +18,12 @@ import { DEFAULT_DEBOUNCE_MS } from '../utils/constants.js';
 export function buildSolverConfig(state) {
   const speciesIds = state.reaction.species.map((s) => s.id);
 
-  // Reactions array
-  const reactions = [];
-  reactions.push(buildReaction(state.reaction.primary));
-  if (state.reaction.sideReactionEnabled) {
-    reactions.push(buildReaction(state.reaction.side));
-  }
+  // Reactions array: primary first, then every active side reaction in order.
+  // `sides` is open-ended — the solver handles any positive count.
+  const reactions = [
+    buildReaction(state.reaction.primary),
+    ...((state.reaction.sides ?? []).map(buildReaction)),
+  ];
 
   // Feed: F0 only contains keys that exist in the species list.
   // For a multi-tube PBR, state.conditions.feedFlow stores the TOTAL reactor
