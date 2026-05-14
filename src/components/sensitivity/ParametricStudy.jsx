@@ -235,7 +235,7 @@ function AxisRow({ label, axis, setAxis, unitLabel, toDisplay, fromDisplay }) {
           label="n"
           value={axis.n}
           onValue={(v) => setAxis({ ...axis, n: Math.max(2, Math.round(v)) })}
-          precision={0}
+          precision={3}  /* preserves any integer 2–50 */
           unit="—"
           min={2}
           max={50}

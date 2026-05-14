@@ -99,7 +99,7 @@ export default function ReactorConfigStep({ index = 3 }) {
               label="# Tubes"
               value={r.pbr.tubes}
               onValue={(v) => updPbr({ tubes: Math.max(1, Math.round(v)) })}
-              precision={0}
+              precision={7}  /* preserves any integer up to 9,999,999 */
               unit="—"
               min={1}
             />
