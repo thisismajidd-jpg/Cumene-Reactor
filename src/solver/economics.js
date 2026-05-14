@@ -216,9 +216,14 @@ export function computeEconomics(state, result, assumptions = {}) {
   }
 
   // ── Sizing ────────────────────────────────────────────────────────
+  // The "designed" catalyst weight is W_for_target — the W needed to reach
+  // X_target, as found by the solver.  Falling back to the envelope keeps
+  // the cost analysis non-null even when X_target was unreachable.
   const Dt    = pbr.Dt ?? 0.0254;
   const tubes = pbr.tubes ?? 1;
-  const Wper  = pbr.perTube ? (pbr.W ?? 0) : (pbr.W ?? 0) / Math.max(tubes, 1);
+  const W_for_target = traj.summary?.W_for_target;
+  const envelopePer  = pbr.perTube ? (pbr.W ?? 0) : (pbr.W ?? 0) / Math.max(tubes, 1);
+  const Wper  = W_for_target ?? envelopePer;
   const Wtot  = Wper * tubes;
   const phi   = pbr.phi ?? 0;
   const rho_b = pbr.rho_b ?? 0;

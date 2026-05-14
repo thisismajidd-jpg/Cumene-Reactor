@@ -9,25 +9,36 @@ import EmptyState from './EmptyState.jsx';
 // L/D = 5 (course convention). V = π D²/4 · L = (5π/4) D³  ⇒  D = (4V/5π)^(1/3).
 const LD_RATIO = 5;
 
-function computeSizing(reactor) {
+/**
+ * @param {Object} reactor   state.reactor slice
+ * @param {Object} [result]  solver result (used to read W_for_target for PBR)
+ *
+ * For PBR, the per-tube catalyst weight is no longer a user input — it is
+ * the W needed to reach X_target, which the postprocess interpolates from
+ * the trajectory and exposes as `summary.W_for_target`.  We fall back to
+ * the state envelope value only when the solver has not yet produced a
+ * trajectory or X_target was unreachable.
+ */
+function computeSizing(reactor, result) {
   if (!reactor) return null;
   const type = reactor.type;
   let V = 0;
+  let W_per_tube = 0;
+  let W_total = 0;
+  let X_reached = null;
   if (type === 'PFR') V = reactor.pfr?.V ?? 0;
   else if (type === 'CSTR') V = reactor.cstr?.V ?? 0;
   else if (type === 'PBR') {
-    // Geometric (physical) bed volume — sum of all tube interiors.
-    //   First find per-tube length from catalyst loading and bulk density:
-    //     L_t = W_per_tube / (ρ_b · A_t)         with A_t = π·D_t²/4
-    //   Then the total reactor volume is just the sum of the tube volumes:
-    //     V = (π/4) · D_t² · L_t · N_tubes
-    //   Equivalently V = W_total / ρ_b — this is the physical volume the
-    //   gas flows through (catalyst + voids between particles), which is
-    //   what the CHPE4512 EO report calls "Total bed volume" (15.02 m³).
     const p = reactor.pbr ?? {};
-    const W_total = p.perTube ? (p.W ?? 0) * (p.tubes ?? 1) : (p.W ?? 0);
+    const tubes = p.tubes ?? 1;
     const rho_b = p.rho_b ?? 0;
+    // Designed catalyst weight per tube = W needed to reach X_target.
+    // Falls back to the hidden state envelope if no solver result yet.
+    const fallback = p.perTube ? (p.W ?? 0) : (p.W ?? 0) / Math.max(tubes, 1);
+    W_per_tube = result?.trajectory?.summary?.W_for_target ?? fallback;
+    W_total = W_per_tube * tubes;
     V = rho_b > 0 ? W_total / rho_b : 0;
+    X_reached = result?.trajectory?.summary?.W_for_target != null;
   }
   if (!Number.isFinite(V) || V <= 0) return null;
 
@@ -37,15 +48,17 @@ function computeSizing(reactor) {
 
   if (type === 'PBR') {
     const p = reactor.pbr ?? {};
-    const tubes  = p.tubes ?? 1;
-    const Dt     = p.Dt ?? 0;
-    const rho_b  = p.rho_b ?? 0;
-    const W_per_tube = p.perTube ? (p.W ?? 0) : (p.W ?? 0) / Math.max(tubes, 1);
+    const tubes = p.tubes ?? 1;
+    const Dt    = p.Dt ?? 0;
+    const rho_b = p.rho_b ?? 0;
     const A_t = Math.PI * Dt * Dt / 4;
-    // L_per_tube from W = ρ_b · A_t · L_t  (bulk density absorbs the voidage).
     const L_per_tube = (rho_b > 0 && A_t > 0) ? W_per_tube / (rho_b * A_t) : 0;
     const V_per_tube = A_t * L_per_tube;
-    Object.assign(out, { tubes, Dt, V_per_tube, L_per_tube });
+    Object.assign(out, {
+      tubes, Dt, V_per_tube, L_per_tube,
+      W_per_tube, W_total,
+      designedFromTarget: X_reached,
+    });
   }
   return out;
 }
@@ -53,7 +66,7 @@ function computeSizing(reactor) {
 export default function SummaryTab({ result }) {
   const { label, toDisplay } = useUnitSystem();
   const { state } = useReactor();
-  const sizing = computeSizing(state.reactor);
+  const sizing = computeSizing(state.reactor, result);
 
   if (!result) return <EmptyState title="No solver result" />;
 
@@ -219,14 +232,39 @@ function SizingCard({ sizing, label, toDisplay }) {
         <tbody>
           {isPBR && (
             <>
-              {/* Tube geometry first — these are the inputs to V. */}
+              {/* Catalyst weight — derived from the user's target conversion. */}
+              <tr>
+                <td colSpan={2} className="px-4 pt-3 pb-1 field-label text-accent-cyan">
+                  Required catalyst weight {sizing.designedFromTarget
+                    ? '(at X = X_target)'
+                    : '(X_target not reached — using envelope)'}
+                </td>
+              </tr>
+              <tr className="bg-bg-elevated/40">
+                <td className="px-4 py-2 text-text-muted w-1/2">
+                  W per tube
+                </td>
+                <td className="px-4 py-2 num text-text-primary font-semibold">
+                  {dim(sizing.W_per_tube, 'weight')} {label('weight')}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2 text-text-muted">
+                  W total = W<sub>t</sub> · N
+                </td>
+                <td className="px-4 py-2 num text-text-primary font-semibold">
+                  {dim(sizing.W_total, 'weight')} {label('weight')}
+                </td>
+              </tr>
+
+              {/* Tube geometry. */}
               <tr>
                 <td colSpan={2} className="px-4 pt-3 pb-1 field-label text-accent-cyan">
                   Tube configuration
                 </td>
               </tr>
               <tr className="bg-bg-elevated/40">
-                <td className="px-4 py-2 text-text-muted w-1/2">Number of tubes N</td>
+                <td className="px-4 py-2 text-text-muted">Number of tubes N</td>
                 <td className="px-4 py-2 num text-text-primary">{sizing.tubes}</td>
               </tr>
               <tr>

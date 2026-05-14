@@ -84,14 +84,17 @@ export default function ReactorConfigStep({ index = 3 }) {
 
       {r.type === 'PBR' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <NumberInput
-              label={r.pbr.perTube ? 'Catalyst W (per tube)' : 'Catalyst W (total)'}
-              value={toDisplay(r.pbr.W, 'weight')}
-              onValue={(v) => updPbr({ W: fromDisplay(v, 'weight') })}
-              unit={label('weight')}
-              min={0}
-            />
+          {/* Catalyst weight is no longer a user knob — it is derived from
+              the target conversion and the kinetics, then surfaced in the
+              Summary tab (Required W per tube / Required W total).  The
+              solver still keeps a hidden "envelope" value in state.pbr.W
+              that it auto-extends until X_target is reached. */}
+          <p className="text-xs text-text-muted">
+            Catalyst weight is computed from the target conversion you set in step 2
+            and shown in the Summary as <em>Required W per tube</em> and{' '}
+            <em>Required W total</em>. Specify the tube geometry and packing below.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <NumberInput
               label="# Tubes"
               value={r.pbr.tubes}
@@ -107,17 +110,6 @@ export default function ReactorConfigStep({ index = 3 }) {
               unit={label('length')}
               min={0}
             />
-            <div className="flex flex-col gap-1.5 min-w-0">
-              <span className="field-label flex items-end min-h-[2.5rem] invisible" aria-hidden>
-                W is per-tube
-              </span>
-              <Toggle
-                checked={r.pbr.perTube}
-                onChange={(v) => updPbr({ perTube: v })}
-                label="W is per-tube"
-                description="Off: W is the whole reactor"
-              />
-            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <NumberInput

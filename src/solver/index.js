@@ -80,31 +80,80 @@ export function solveReactor(config) {
         thermal: config.thermal ?? null,
         ergun: ergunCfg,
       });
-      const Wmax = config.reactor.W;
       const integrator = config.numerics?.adaptive ? rk4IntegrateAdaptive : rk4Integrate;
-      const out = integrator(system.rhs, 0, Wmax, system.y0, {
-        steps: config.numerics?.steps ?? DEFAULT_RK4_STEPS,
-      });
-      if (!out.ok) {
-        return { ok: false, message: out.message, warnings: [], trajectory: null };
+      const steps = config.numerics?.steps ?? DEFAULT_RK4_STEPS;
+      const Xtarget = config.constraints?.Xtarget;
+
+      // ── 1. Auto-extend pass: grow the integration envelope until X_target
+      // is reached (or until a hard cap stops us).  W in state acts only as
+      // an initial seed — the user no longer specifies catalyst inventory
+      // directly; it is derived from the target conversion.
+      let Wenv = Math.max(config.reactor.W ?? 1, 1);
+      const W_CAP = 1_000_000;        // kg/tube — physical absurdity ceiling
+      const MAX_EXTENSIONS = 12;      // 2¹² = 4096× starting envelope
+      let out;
+      let processed;
+      let extensions = 0;
+      while (extensions <= MAX_EXTENSIONS) {
+        out = integrator(system.rhs, 0, Wenv, system.y0, { steps });
+        if (!out.ok) {
+          return { ok: false, message: out.message, warnings: [], trajectory: null };
+        }
+        processed = processTrajectory({
+          ts: out.ts, ys: out.ys,
+          species: config.species,
+          indices: system.indices,
+          feed: config.feed,
+          reactions,
+          constraints: config.constraints,
+          basis: 'W',
+        });
+        const reached =
+          Xtarget == null ||
+          (processed.summary.W_for_target != null &&
+            processed.summary.W_for_target < Wenv * 0.95);
+        if (reached) break;
+        if (Wenv * 2 > W_CAP) break;
+        Wenv *= 2;
+        extensions++;
       }
-      const processed = processTrajectory({
-        ts: out.ts,
-        ys: out.ys,
-        species: config.species,
-        indices: system.indices,
-        feed: config.feed,
-        reactions,
-        constraints: config.constraints,
-        basis: 'W',
-      });
+
+      // ── 2. Truncation pass: integrate again, this time stopping at
+      // 1.2 × W_for_target so the trajectory shows the designed reactor
+      // plus a little context past the design point.  When X_target was not
+      // reached at the cap we keep the auto-extended trajectory.
+      const Wdesign = processed.summary.W_for_target;
+      const warnings = [...(processed.warnings ?? [])];
+      if (Wdesign != null && Wdesign > 0) {
+        const Wplot = 1.2 * Wdesign;
+        const out2 = integrator(system.rhs, 0, Wplot, system.y0, { steps });
+        if (out2.ok) {
+          processed = processTrajectory({
+            ts: out2.ts, ys: out2.ys,
+            species: config.species,
+            indices: system.indices,
+            feed: config.feed,
+            reactions,
+            constraints: config.constraints,
+            basis: 'W',
+          });
+          warnings.push(...(processed.warnings ?? []));
+        }
+      } else if (Xtarget != null) {
+        warnings.push({
+          level: 'warning',
+          code: 'XTARGET_UNREACHED',
+          message: `X_target = ${Xtarget} not reached even at ${Wenv.toFixed(0)} kg/tube; kinetics may be too slow or X_target too aggressive.`,
+        });
+      }
+
       return {
         ok: true,
         reactorType: 'PBR',
         basis: 'W',
         trajectory: processed,
         cstr: null,
-        warnings: processed.warnings,
+        warnings,
         message: 'completed',
       };
     }
